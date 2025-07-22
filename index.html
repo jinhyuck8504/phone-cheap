@@ -208,11 +208,71 @@
             padding: 32px;
         }
 
+        .deals-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
         .deals-title {
             font-size: 20px;
             font-weight: 600;
-            margin-bottom: 24px;
             color: #333333;
+            margin: 0;
+        }
+
+        .deals-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .sort-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sort-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin: 0;
+        }
+
+        .sort-group select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #ffffff;
+            color: #333333;
+            cursor: pointer;
+            min-width: 140px;
+        }
+
+        .sort-group select:focus {
+            outline: none;
+            border-color: #333333;
+            box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.1);
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .results-count span {
+            color: #333333;
+            font-weight: 600;
         }
 
         .deals-grid {
@@ -567,6 +627,8 @@
             .search-form { grid-template-columns: 1fr 1fr; }
             .deals-grid { grid-template-columns: 1fr; }
             .form-row { grid-template-columns: 1fr; }
+            .deals-header { flex-direction: column; align-items: flex-start; }
+            .deals-controls { width: 100%; justify-content: space-between; }
             header { flex-direction: column; gap: 16px; text-align: center; }
             .logo { font-size: 20px; }
             .search-title, .deals-title, .modal-title { font-size: 18px; }
@@ -574,6 +636,9 @@
 
         @media (max-width: 480px) {
             .search-form { grid-template-columns: 1fr; }
+            .deals-controls { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .sort-group { width: 100%; }
+            .sort-group select { width: 100%; min-width: auto; }
         }
     </style>
 </head>
@@ -658,7 +723,26 @@
         </div>
 
         <div class="deals-section">
-            <h2 class="deals-title">추천 딜 리스트</h2>
+            <div class="deals-header">
+                <h2 class="deals-title">추천 딜 리스트</h2>
+                <div class="deals-controls">
+                    <div class="sort-group">
+                        <label for="sortBy">정렬:</label>
+                        <select id="sortBy">
+                            <option value="price-low">가격 낮은순</option>
+                            <option value="price-high">가격 높은순</option>
+                            <option value="discount-high">할인율 높은순</option>
+                            <option value="savings-high">절약금액 높은순</option>
+                            <option value="brand">브랜드순</option>
+                            <option value="newest">최신순</option>
+                            <option value="popular">인기순</option>
+                        </select>
+                    </div>
+                    <div class="results-count">
+                        <span id="resultsCount">0개 딜</span>
+                    </div>
+                </div>
+            </div>
             <div class="deals-grid" id="dealsGrid">
                 <div class="loading">딜을 불러오는 중...</div>
             </div>
@@ -1022,7 +1106,128 @@
             }
         }
 
-        // 딜 목록 로드 (필터 기능 강화)
+        // 딜 정렬 함수
+        function sortDeals(deals, sortBy) {
+            var sortedDeals = deals.slice(); // 복사본 생성
+            
+            switch (sortBy) {
+                case 'price-low':
+                    sortedDeals.sort(function(a, b) {
+                        return a.discounted_price - b.discounted_price;
+                    });
+                    break;
+                    
+                case 'price-high':
+                    sortedDeals.sort(function(a, b) {
+                        return b.discounted_price - a.discounted_price;
+                    });
+                    break;
+                    
+                case 'discount-high':
+                    sortedDeals.sort(function(a, b) {
+                        var discountA = (1 - a.discounted_price / a.original_price) * 100;
+                        var discountB = (1 - b.discounted_price / b.original_price) * 100;
+                        return discountB - discountA;
+                    });
+                    break;
+                    
+                case 'savings-high':
+                    sortedDeals.sort(function(a, b) {
+                        var savingsA = a.original_price - a.discounted_price;
+                        var savingsB = b.original_price - b.discounted_price;
+                        return savingsB - savingsA;
+                    });
+                    break;
+                    
+                case 'brand':
+                    sortedDeals.sort(function(a, b) {
+                        var brandA = a.phone_model.includes('갤럭시') ? '1-갤럭시' : 
+                                   a.phone_model.includes('아이폰') ? '2-아이폰' :
+                                   a.phone_model.includes('샤오미') ? '3-샤오미' :
+                                   a.phone_model.includes('픽셀') ? '4-픽셀' : '5-기타';
+                        var brandB = b.phone_model.includes('갤럭시') ? '1-갤럭시' : 
+                                   b.phone_model.includes('아이폰') ? '2-아이폰' :
+                                   b.phone_model.includes('샤오미') ? '3-샤오미' :
+                                   b.phone_model.includes('픽셀') ? '4-픽셀' : '5-기타';
+                        
+                        if (brandA === brandB) {
+                            return a.discounted_price - b.discounted_price; // 같은 브랜드면 가격순
+                        }
+                        return brandA.localeCompare(brandB);
+                    });
+                    break;
+                    
+                case 'newest':
+                    // 최신순 (S24, 15 Pro 등이 먼저)
+                    sortedDeals.sort(function(a, b) {
+                        var scoreA = 0;
+                        var scoreB = 0;
+                        
+                        // 최신 모델 점수 부여
+                        if (a.phone_model.includes('S24')) scoreA += 100;
+                        if (a.phone_model.includes('15') && a.phone_model.includes('아이폰')) scoreA += 90;
+                        if (a.phone_model.includes('14') && a.phone_model.includes('아이폰')) scoreA += 80;
+                        if (a.phone_model.includes('픽셀 8')) scoreA += 85;
+                        if (a.phone_model.includes('샤오미 14')) scoreA += 85;
+                        
+                        if (b.phone_model.includes('S24')) scoreB += 100;
+                        if (b.phone_model.includes('15') && b.phone_model.includes('아이폰')) scoreB += 90;
+                        if (b.phone_model.includes('14') && b.phone_model.includes('아이폰')) scoreB += 80;
+                        if (b.phone_model.includes('픽셀 8')) scoreB += 85;
+                        if (b.phone_model.includes('샤오미 14')) scoreB += 85;
+                        
+                        if (scoreA === scoreB) {
+                            return a.discounted_price - b.discounted_price;
+                        }
+                        return scoreB - scoreA;
+                    });
+                    break;
+                    
+                case 'popular':
+                    // 인기순 (Pro 모델, 플래그십 우선)
+                    sortedDeals.sort(function(a, b) {
+                        var scoreA = 0;
+                        var scoreB = 0;
+                        
+                        // 인기 모델 점수 부여
+                        if (a.phone_model.includes('Pro')) scoreA += 50;
+                        if (a.phone_model.includes('S24') || a.phone_model.includes('S23')) scoreA += 40;
+                        if (a.phone_model.includes('아이폰 15')) scoreA += 45;
+                        if (a.phone_model.includes('Z플립') || a.phone_model.includes('Z폴드')) scoreA += 35;
+                        
+                        if (b.phone_model.includes('Pro')) scoreB += 50;
+                        if (b.phone_model.includes('S24') || b.phone_model.includes('S23')) scoreB += 40;
+                        if (b.phone_model.includes('아이폰 15')) scoreB += 45;
+                        if (b.phone_model.includes('Z플립') || b.phone_model.includes('Z폴드')) scoreB += 35;
+                        
+                        // 할인율도 고려
+                        var discountA = (1 - a.discounted_price / a.original_price) * 100;
+                        var discountB = (1 - b.discounted_price / b.original_price) * 100;
+                        scoreA += discountA * 0.3;
+                        scoreB += discountB * 0.3;
+                        
+                        return scoreB - scoreA;
+                    });
+                    break;
+                    
+                default:
+                    // 기본: 가격 낮은순
+                    sortedDeals.sort(function(a, b) {
+                        return a.discounted_price - b.discounted_price;
+                    });
+            }
+            
+            return sortedDeals;
+        }
+
+        // 결과 수 업데이트
+        function updateResultsCount(count) {
+            var resultsCount = document.getElementById('resultsCount');
+            if (resultsCount) {
+                resultsCount.textContent = count + '개 딜';
+            }
+        }
+        // 딜 목록 로드 (필터 + 정렬 기능)
         function loadDeals() {
             var dealsGrid = document.getElementById('dealsGrid');
             if (dealsGrid) {
@@ -1034,6 +1239,7 @@
                 var carrier = document.getElementById('carrier') ? document.getElementById('carrier').value : '';
                 var priceRange = document.getElementById('priceRange') ? document.getElementById('priceRange').value : '';
                 var brand = document.getElementById('brand') ? document.getElementById('brand').value : '';
+                var sortBy = document.getElementById('sortBy') ? document.getElementById('sortBy').value : 'price-low';
                 
                 var deals = sampleDeals.slice();
                 
@@ -1069,35 +1275,55 @@
                     });
                 }
                 
-                // 필터링 결과 로그
-                console.log('필터 적용 결과:', deals.length + '개 딜 발견');
-                
-                // 사용자 타입별 정렬
+                // 사용자 타입별 가중치 적용 (정렬 전에)
                 if (currentUserType === 'senior') {
-                    deals = deals.sort(function(a, b) {
-                        var aIsSenior = a.phone_model.includes('시니어') || a.features.includes('큰 글씨') || a.features.includes('간편 모드');
-                        var bIsSenior = b.phone_model.includes('시니어') || b.features.includes('큰 글씨') || b.features.includes('간편 모드');
-                        
-                        if (aIsSenior && !bIsSenior) return -1;
-                        if (!aIsSenior && bIsSenior) return 1;
-                        return a.discounted_price - b.discounted_price;
+                    deals.forEach(function(deal) {
+                        if (deal.phone_model.includes('시니어') || 
+                            deal.features.includes('큰 글씨') || 
+                            deal.features.includes('간편 모드')) {
+                            deal._userTypeScore = 100; // 시니어 적합 모델 우선
+                        } else {
+                            deal._userTypeScore = 0;
+                        }
                     });
                 } else if (currentUserType === 'minor') {
-                    deals = deals.sort(function(a, b) {
-                        var aIsMinor = a.features.includes('학생할인') || a.features.includes('부모관리') || a.features.includes('안전기능');
-                        var bIsMinor = b.features.includes('학생할인') || b.features.includes('부모관리') || b.features.includes('안전기능');
-                        
-                        if (aIsMinor && !bIsMinor) return -1;
-                        if (!aIsMinor && bIsMinor) return 1;
-                        return a.discounted_price - b.discounted_price;
+                    deals.forEach(function(deal) {
+                        if (deal.features.includes('학생할인') || 
+                            deal.features.includes('부모관리') || 
+                            deal.features.includes('안전기능')) {
+                            deal._userTypeScore = 100; // 학생 적합 모델 우선
+                        } else {
+                            deal._userTypeScore = 0;
+                        }
                     });
                 } else {
-                    deals = deals.sort(function(a, b) {
-                        return a.discounted_price - b.discounted_price;
+                    deals.forEach(function(deal) {
+                        deal._userTypeScore = 0; // 일반 성인은 가중치 없음
                     });
                 }
                 
+                // 정렬 적용
+                deals = sortDeals(deals, sortBy);
+                
+                // 사용자 타입 가중치가 있는 경우 최종 정렬
+                if (currentUserType !== 'adult') {
+                    deals.sort(function(a, b) {
+                        if (a._userTypeScore !== b._userTypeScore) {
+                            return b._userTypeScore - a._userTypeScore; // 가중치 높은 순
+                        }
+                        return 0; // 기존 정렬 유지
+                    });
+                }
+                
+                // 가중치 속성 제거
+                deals.forEach(function(deal) {
+                    delete deal._userTypeScore;
+                });
+                
+                console.log('필터링 + 정렬 결과:', deals.length + '개 딜, 정렬:', sortBy);
+                
                 currentDeals = deals;
+                updateResultsCount(deals.length);
                 renderDeals(deals);
                 
             } catch (error) {
@@ -1332,7 +1558,14 @@
                     });
                 }
 
-                // 검색 폼
+                // 정렬 셀렉트 박스
+                var sortSelect = document.getElementById('sortBy');
+                if (sortSelect) {
+                    sortSelect.addEventListener('change', function() {
+                        console.log('정렬 변경:', this.value);
+                        loadDeals(); // 정렬 변경시 딜 목록 새로고침
+                    });
+                }
                 var searchForm = document.getElementById('searchForm');
                 if (searchForm) {
                     searchForm.addEventListener('submit', function(e) {
