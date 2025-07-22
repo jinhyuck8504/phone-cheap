@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>폰싸게 대리점 관리 시스템</title>
+    
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    
+    <!-- 대리점 전용 스타일 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 24px 32px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .admin-logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .admin-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .admin-content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 24px;
+        }
+
+        .admin-sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            height: fit-content;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .admin-main {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 8px;
+        }
+
+        .sidebar-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #64748b;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #3b82f6;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .form-section {
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            color: #1e293b;
+            transition: border-color 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .deals-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .deals-table th,
+        .deals-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .deals-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            background: #10b981;
+            color: white;
+            border-radius: 8px;
+            font-weight: 500;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .admin-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-sidebar {
+                order: 2;
+            }
+            
+            .admin-main {
+                order: 1;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <div class="admin-logo">
+                <span style="font-size: 28px;">🏪</span>
+                <div>
+                    <h1>폰싸게 대리점 관리</h1>
+                    <p style="font-size: 14px; opacity: 0.9;">스마트폰마트 강남점</p>
+                </div>
+            </div>
+            <div class="admin-nav">
+                <button class="nav-btn" onclick="window.open('index.html', '_blank')">고객 페이지 보기</button>
+                <button class="nav-btn" onclick="logout()">로그아웃</button>
+            </div>
+        </header>
+
+        <div class="admin-content">
+            <aside class="admin-sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#dashboard" class="menu-link active" onclick="showSection('dashboard')">📊 대시보드</a></li>
+                    <li><a href="#deals" class="menu-link" onclick="showSection('deals')">📱 딜 관리</a></li>
+                    <li><a href="#reservations" class="menu-link" onclick="showSection('reservations')">📅 예약 관리</a></li>
+                    <li><a href="#store" class="menu-link" onclick="showSection('store')">🏪 매장 정보</a></li>
+                    <li><a href="#analytics" class="menu-link" onclick="showSection('analytics')">📈 통계</a></li>
+                </ul>
+            </aside>
+
+            <main class="admin-main">
+                <!-- 대시보드 섹션 -->
+                <div id="dashboard" class="section active">
+                    <h2 class="section-title">📊 대시보드</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalDeals">8</div>
+                            <div class="stat-label">등록된 딜</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeDeals">6</div>
+                            <div class="stat-label">활성 딜</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalReservations">12</div>
+                            <div class="stat-label">총 예약</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pendingReservations">3</div>
+                            <div class="stat-label">대기 중 예약</div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 style="margin-bottom: 16px;">📈 오늘의 현황</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                                🔥 갤럭시 S24 - 오늘 2건 예약 접수
+                            </li>
+                            <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                                📱 아이폰 15 Pro - 재고 부족 알림
+                            </li>
+                            <li style="padding: 8px 0;">
+                                ✨ 새로운 예약 3건 검토 필요
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 딜 관리 섹션 -->
+                <div id="deals" class="section">
+                    <h2 class="section-title">📱 딜 관리</h2>
+                    
+                    <div class="form-section">
+                        <h3 style="margin-bottom: 20px;">새 딜 등록</h3>
+                        <form id="dealForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="phoneModel">휴대폰 모델</label>
+                                <input type="text" id="phoneModel" placeholder="예: 갤럭시 S24" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="carrier">통신사</label>
+                                <select id="carrier" required>
+                                    <option value="">선택하세요</option>
+                                    <option value="SKT">SKT</option>
+                                    <option value="KT">KT</option>
+                                    <option value="LGU+">LG유플러스</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="originalPrice">정가</label>
+                                <input type="number" id="originalPrice" placeholder="1299000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="discountedPrice">할인가</label>
+                                <input type="number" id="discountedPrice" placeholder="799000" required>
+                            </div>
+                            <div class="form-group full">
+                                <label for="features">특징 (쉼표로 구분)</label>
+                                <input type="text" id="features" placeholder="프리미엄, 카메라, 무료설치">
+                            </div>
+                            <div class="form-group full">
+                                <label for="description">상세 설명</label>
+                                <textarea id="description" placeholder="딜에 대한 자세한 설명을 입력하세요"></textarea>
+                            </div>
+                            <div class="form-group full">
+                                <button type="submit" class="btn btn-primary">딜 등록</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <h3>등록된 딜 목록</h3>
+                    <table class="deals-table">
+                        <thead>
+                            <tr>
+                                <th>모델명</th>
+                                <th>통신사</th>
+                                <th>할인가</th>
+                                <th>할인율</th>
+                                <th>상태</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dealsTableBody">
+                            <!-- JavaScript에서 동적으로 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 예약 관리 섹션 -->
+                <div id="reservations" class="section">
+                    <h2 class="section-title">📅 예약 관리</h2>
+                    
+                    <table class="deals-table">
+                        <thead>
+                            <tr>
+                                <th>예약일</th>
+                                <th>고객명</th>
+                                <th>연락처</th>
+                                <th>희망기종</th>
+                                <th>방문예정일</th>
+                                <th>상태</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservationsTableBody">
+                            <!-- JavaScript에서 동적으로 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 매장 정보 섹션 -->
+                <div id="store" class="section">
+                    <h2 class="section-title">🏪 매장 정보</h2>
+                    
+                    <div class="form-section">
+                        <form id="storeForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="storeName">매장명</label>
+                                <input type="text" id="storeName" value="스마트폰마트 강남점">
+                            </div>
+                            <div class="form-group">
+                                <label for="storePhone">연락처</label>
+                                <input type="tel" id="storePhone" value="02-1234-5678">
+                            </div>
+                            <div class="form-group full">
+                                <label for="storeAddress">주소</label>
+                                <input type="text" id="storeAddress" value="서울시 강남구 테헤란로 123">
+                            </div>
+                            <div class="form-group full">
+                                <label for="businessHours">운영시간</label>
+                                <input type="text" id="businessHours" value="평일 10:00-20:00, 주말 11:00-19:00">
+                            </div>
+                            <div class="form-group full">
+                                <label for="storeDescription">매장 소개</label>
+                                <textarea id="storeDescription">20년 경력의 전문 상담사가 최적의 요금제와 기종을 추천해드립니다.</textarea>
+                            </div>
+                            <div class="form-group full">
+                                <button type="submit" class="btn btn-success">정보 업데이트</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 통계 섹션 -->
+                <div id="analytics" class="section">
+                    <h2 class="section-title">📈 통계</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">24</div>
+                            <div class="stat-label">이번 달 예약</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">18</div>
+                            <div class="stat-label">성사된 거래</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">75%</div>
+                            <div class="stat-label">예약 성사율</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">4.8/5</div>
+                            <div class="stat-label">고객 만족도</div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 style="margin-bottom: 16px;">📊 인기 기종 TOP 5</h3>
+                        <ol style="padding-left: 20px;">
+                            <li style="margin-bottom: 8px;">갤럭시 S24 - 8건 예약</li>
+                            <li style="margin-bottom: 8px;">아이폰 15 Pro - 6건 예약</li>
+                            <li style="margin-bottom: 8px;">갤럭시 S23 - 4건 예약</li>
+                            <li style="margin-bottom: 8px;">아이폰 15 - 3건 예약</li>
+                            <li style="margin-bottom: 8px;">갤럭시 A54 - 3건 예약</li>
+                        </ol>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <!-- 대리점 관리 JavaScript -->
+    <script>
+        // 전역 변수
+        var currentStore = {
+            id: 'store-1',
+            name: '스마트폰마트 강남점',
+            verified: true
+        };
+        
+        var storeDeals = [
+            {
+                id: 'deal-1',
+                phone_model: '갤럭시 S24',
+                carrier: 'SKT',
+                original_price: 1199000,
+                discounted_price: 799000,
+                features: ['최신기종', 'AI 카메라', '무료설치'],
+                status: 'active',
+                created_at: '2025-01-20'
+            },
+            {
+                id: 'deal-2',
+                phone_model: '아이폰 15 Pro',
+                carrier: 'KT',
+                original_price: 1599000,
+                discounted_price: 1199000,
+                features: ['Pro 모델', '티타늄', '48MP 카메라'],
+                status: 'active',
+                created_at: '2025-01-19'
+            },
+            {
+                id: 'deal-3',
+                phone_model: '갤럭시 S23',
+                carrier: 'LGU+',
+                original_price: 999000,
+                discounted_price: 599000,
+                features: ['프리미엄', '카메라', '방문설치'],
+                status: 'inactive',
+                created_at: '2025-01-18'
+            }
+        ];
+        
+        var storeReservations = [
+            {
+                id: 'res-1',
+                customer_name: '김철수',
+                customer_phone: '010-1234-5678',
+                phone_model: '갤럭시 S24',
+                visit_date: '2025-01-25',
+                visit_time: '14:00',
+                status: 'pending',
+                created_at: '2025-01-23'
+            },
+            {
+                id: 'res-2',
+                customer_name: '이영희',
+                customer_phone: '010-9876-5432',
+                phone_model: '아이폰 15 Pro',
+                visit_date: '2025-01-24',
+                visit_time: '11:00',
+                status: 'confirmed',
+                created_at: '2025-01-22'
+            },
+            {
+                id: 'res-3',
+                customer_name: '박민수',
+                customer_phone: '010-5555-1234',
+                phone_model: '갤럭시 S23',
+                visit_date: '2025-01-26',
+                visit_time: '16:00',
+                status: 'pending',
+                created_at: '2025-01-23'
+            }
+        ];
+
+        // 섹션 전환
+        function showSection(sectionId) {
+            // 모든 섹션 숨기기
+            var sections = document.querySelectorAll('.section');
+            sections.forEach(function(section) {
+                section.classList.remove('active');
+            });
+            
+            // 모든 메뉴 링크 비활성화
+            var links = document.querySelectorAll('.menu-link');
+            links.forEach(function(link) {
+                link.classList.remove('active');
+            });
+            
+            // 선택된 섹션 보이기
+            document.getElementById(sectionId).classList.add('active');
+            
+            // 해당 메뉴 링크 활성화
+            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            
+            // 섹션별 데이터 로드
+            if (sectionId === 'deals') {
+                loadDealsTable();
+            } else if (sectionId === 'reservations') {
+                loadReservationsTable();
+            } else if (sectionId === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // 대시보드 업데이트
+        function updateDashboard() {
+            var activeDeals = storeDeals.filter(deal => deal.status === 'active').length;
+            var pendingReservations = storeReservations.filter(res => res.status === 'pending').length;
+            
+            document.getElementById('totalDeals').textContent = storeDeals.length;
+            document.getElementById('activeDeals').textContent = activeDeals;
+            document.getElementById('totalReservations').textContent = storeReservations.length;
+            document.getElementById('pendingReservations').textContent = pendingReservations;
+        }
+
+        // 딜 테이블 로드
+        function loadDealsTable() {
+            var tbody = document.getElementById('dealsTableBody');
+            var html = '';
+            
+            storeDeals.forEach(function(deal) {
+                var discountPercent = Math.round((1 - deal.discounted_price / deal.original_price) * 100);
+                var statusClass = deal.status === 'active' ? 'status-active' : 'status-inactive';
+                var statusText = deal.status === 'active' ? '활성' : '비활성';
+                
+                html += `
+                    <tr>
+                        <td>${deal.phone_model}</td>
+                        <td>${deal.carrier}</td>
+                        <td>${deal.discounted_price.toLocaleString()}원</td>
+                        <td>${discountPercent}%</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary btn-small" onclick="editDeal('${deal.id}')">수정</button>
+                                <button class="btn ${deal.status === 'active' ? 'btn-danger' : 'btn-success'} btn-small" 
+                                        onclick="toggleDealStatus('${deal.id}')">
+                                    ${deal.status === 'active' ? '비활성화' : '활성화'}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // 예약 테이블 로드
+        function loadReservationsTable() {
+            var tbody = document.getElementById('reservationsTableBody');
+            var html = '';
+            
+            storeReservations.forEach(function(reservation) {
+                var statusClass = reservation.status === 'pending' ? 'status-pending' : 
+                                reservation.status === 'confirmed' ? 'status-active' : 'status-inactive';
+                var statusText = reservation.status === 'pending' ? '대기중' : 
+                               reservation.status === 'confirmed' ? '확정' : '취소';
+                
+                html += `
+                    <tr>
+                        <td>${reservation.created_at}</td>
+                        <td>${reservation.customer_name}</td>
+                        <td>${reservation.customer_phone}</td>
+                        <td>${reservation.phone_model}</td>
+                        <td>${reservation.visit_date} ${reservation.visit_time}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                ${reservation.status === 'pending' ? `
+                                    <button class="btn btn-success btn-small" onclick="confirmReservation('${reservation.id}')">승인</button>
+                                    <button class="btn btn-danger btn-small" onclick="cancelReservation('${reservation.id}')">거절</button>
+                                ` : `
+                                    <button class="btn btn-primary btn-small" onclick="viewReservation('${reservation.id}')">상세</button>
+                                `}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // 새 딜 등록
+        function handleDealSubmit(e) {
+            e.preventDefault();
+            
+            var phoneModel = document.getElementById('phoneModel').value;
+            var carrier = document.getElementById('carrier').value;
+            var originalPrice = parseInt(document.getElementById('originalPrice').value);
+            var discountedPrice = parseInt(document.getElementById('discountedPrice').value);
+            var features = document.getElementById('features').value.split(',').map(f => f.trim());
+            var description = document.getElementById('description').value;
+            
+            var newDeal = {
+                id: 'deal-' + Date.now(),
+                phone_model: phoneModel,
+                carrier: carrier,
+                original_price: originalPrice,
+                discounted_price: discountedPrice,
+                features: features,
+                description: description,
+                status: 'active',
+                created_at: new Date().toISOString().split('T')[0]
+            };
+            
+            storeDeals.push(newDeal);
+            loadDealsTable();
+            updateDashboard();
+            showNotification('새 딜이 등록되었습니다!', 'success');
+            
+            // 폼 초기화
+            document.getElementById('dealForm').reset();
+        }
+
+        // 딜 상태 토글
+        function toggleDealStatus(dealId) {
+            var deal = storeDeals.find(d => d.id === dealId);
+            if (deal) {
+                deal.status = deal.status === 'active' ? 'inactive' : 'active';
+                loadDealsTable();
+                updateDashboard();
+                showNotification('딜 상태가 변경되었습니다.', 'success');
+            }
+        }
+
+        // 딜 수정
+        function editDeal(dealId) {
+            var deal = storeDeals.find(d => d.id === dealId);
+            if (deal) {
+                document.getElementById('phoneModel').value = deal.phone_model;
+                document.getElementById('carrier').value = deal.carrier;
+                document.getElementById('originalPrice').value = deal.original_price;
+                document.getElementById('discountedPrice').value = deal.discounted_price;
+                document.getElementById('features').value = deal.features.join(', ');
+                document.getElementById('description').value = deal.description || '';
+                
+                showNotification('딜 정보를 수정 폼에 불러왔습니다.', 'success');
+                showSection('deals');
+            }
+        }
+
+        // 예약 승인
+        function confirmReservation(reservationId) {
+            var reservation = storeReservations.find(r => r.id === reservationId);
+            if (reservation) {
+                reservation.status = 'confirmed';
+                loadReservationsTable();
+                updateDashboard();
+                showNotification('예약이 승인되었습니다.', 'success');
+            }
+        }
+
+        // 예약 거절
+        function cancelReservation(reservationId) {
+            var reservation = storeReservations.find(r => r.id === reservationId);
+            if (reservation) {
+                reservation.status = 'cancelled';
+                loadReservationsTable();
+                updateDashboard();
+                showNotification('예약이 거절되었습니다.', 'success');
+            }
+        }
+
+        // 예약 상세 보기
+        function viewReservation(reservationId) {
+            var reservation = storeReservations.find(r => r.id === reservationId);
+            if (reservation) {
+                alert(`예약 상세 정보:
+고객명: ${reservation.customer_name}
+연락처: ${reservation.customer_phone}
+희망기종: ${reservation.phone_model}
+방문예정: ${reservation.visit_date} ${reservation.visit_time}
+상태: ${reservation.status === 'confirmed' ? '확정' : reservation.status === 'cancelled' ? '취소' : '대기중'}
+예약일: ${reservation.created_at}`);
+            }
+        }
+
+        // 매장 정보 업데이트
+        function handleStoreSubmit(e) {
+            e.preventDefault();
+            showNotification('매장 정보가 업데이트되었습니다!', 'success');
+        }
+
+        // 알림 표시
+        function showNotification(message, type) {
+            var notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification ' + (type === 'error' ? 'error' : '') + ' show';
+            
+            setTimeout(function() {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 로그아웃
+        function logout() {
+            if (confirm('로그아웃하시겠습니까?')) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 딜 등록 폼
+            var dealForm = document.getElementById('dealForm');
+            if (dealForm) {
+                dealForm.addEventListener('submit', handleDealSubmit);
+            }
+            
+            // 매장 정보 폼
+            var storeForm = document.getElementById('storeForm');
+            if (storeForm) {
+                storeForm.addEventListener('submit', handleStoreSubmit);
+            }
+        }
+
+        // 앱 초기화
+        function initAdminApp() {
+            console.log('대리점 관리 시스템 시작!');
+            
+            try {
+                setupEventListeners();
+                updateDashboard();
+                loadDealsTable();
+                console.log('대리점 관리 시스템 초기화 완료!');
+            } catch (error) {
+                console.error('관리 시스템 초기화 오류:', error);
+                showNotification('시스템 로드 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // DOM 로드 후 앱 시작
+        document.addEventListener('DOMContentLoaded', function() {
+            initAdminApp();
+        });
+
+        // 디버그 함수
+        window.debugAdmin = function() {
+            console.log('현재 매장:', currentStore);
+            console.log('등록된 딜:', storeDeals.length + '개');
+            console.log('예약 목록:', storeReservations.length + '개');
+        };
+    </script>
+</body>
+</html>
