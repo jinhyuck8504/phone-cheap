@@ -152,7 +152,7 @@
 
         .search-form {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
             gap: 20px;
             margin-bottom: 24px;
         }
@@ -430,12 +430,16 @@
 
         @media (max-width: 768px) {
             .container { padding: 16px; }
-            .search-form { grid-template-columns: 1fr; }
+            .search-form { grid-template-columns: 1fr 1fr; }
             .deals-grid { grid-template-columns: 1fr; }
             .form-row { grid-template-columns: 1fr; }
             header { flex-direction: column; gap: 16px; text-align: center; }
             .logo { font-size: 20px; }
             .search-title, .deals-title, .modal-title { font-size: 18px; }
+        }
+
+        @media (max-width: 480px) {
+            .search-form { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -471,7 +475,7 @@
                 <div class="form-group">
                     <label for="location">지역</label>
                     <select id="location">
-                        <option value="">지역 선택</option>
+                        <option value="">모든 지역</option>
                         <option value="강남구">강남구</option>
                         <option value="강동구">강동구</option>
                         <option value="강북구">강북구</option>
@@ -480,6 +484,8 @@
                         <option value="광진구">광진구</option>
                         <option value="구로구">구로구</option>
                         <option value="금천구">금천구</option>
+                        <option value="송파구">송파구</option>
+                        <option value="노원구">노원구</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -489,6 +495,28 @@
                         <option value="SKT">SKT</option>
                         <option value="KT">KT</option>
                         <option value="LGU+">LG유플러스</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="priceRange">가격대</label>
+                    <select id="priceRange">
+                        <option value="">모든 가격</option>
+                        <option value="0-200000">20만원 이하</option>
+                        <option value="200000-400000">20~40만원</option>
+                        <option value="400000-600000">40~60만원</option>
+                        <option value="600000-800000">60~80만원</option>
+                        <option value="800000-1000000">80~100만원</option>
+                        <option value="1000000-99999999">100만원 이상</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="brand">브랜드</label>
+                    <select id="brand">
+                        <option value="">모든 브랜드</option>
+                        <option value="갤럭시">삼성 갤럭시</option>
+                        <option value="아이폰">애플 아이폰</option>
+                        <option value="샤오미">샤오미</option>
+                        <option value="픽셀">구글 픽셀</option>
                     </select>
                 </div>
                 <button type="submit" class="search-btn">🔍 딜 찾기</button>
@@ -860,7 +888,7 @@
             }
         }
 
-        // 딜 목록 로드
+        // 딜 목록 로드 (필터 기능 강화)
         function loadDeals() {
             var dealsGrid = document.getElementById('dealsGrid');
             if (dealsGrid) {
@@ -870,20 +898,45 @@
             try {
                 var location = document.getElementById('location') ? document.getElementById('location').value : '';
                 var carrier = document.getElementById('carrier') ? document.getElementById('carrier').value : '';
+                var priceRange = document.getElementById('priceRange') ? document.getElementById('priceRange').value : '';
+                var brand = document.getElementById('brand') ? document.getElementById('brand').value : '';
                 
                 var deals = sampleDeals.slice();
                 
-                // 필터 적용
+                // 지역 필터
                 if (location) {
                     deals = deals.filter(function(deal) {
                         return deal.address.includes(location);
                     });
                 }
+                
+                // 통신사 필터
                 if (carrier) {
                     deals = deals.filter(function(deal) {
                         return deal.carrier === carrier;
                     });
                 }
+                
+                // 가격대 필터
+                if (priceRange) {
+                    var priceRangeArray = priceRange.split('-');
+                    var minPrice = parseInt(priceRangeArray[0]);
+                    var maxPrice = parseInt(priceRangeArray[1]);
+                    
+                    deals = deals.filter(function(deal) {
+                        return deal.discounted_price >= minPrice && deal.discounted_price <= maxPrice;
+                    });
+                }
+                
+                // 브랜드 필터
+                if (brand) {
+                    deals = deals.filter(function(deal) {
+                        return deal.phone_model.includes(brand);
+                    });
+                }
+                
+                // 필터링 결과 로그
+                console.log('필터 적용 결과:', deals.length + '개 딜 발견');
                 
                 // 사용자 타입별 정렬
                 if (currentUserType === 'senior') {
@@ -893,7 +946,7 @@
                         
                         if (aIsSenior && !bIsSenior) return -1;
                         if (!aIsSenior && bIsSenior) return 1;
-                        return 0;
+                        return a.discounted_price - b.discounted_price;
                     });
                 } else if (currentUserType === 'minor') {
                     deals = deals.sort(function(a, b) {
@@ -902,7 +955,7 @@
                         
                         if (aIsMinor && !bIsMinor) return -1;
                         if (!aIsMinor && bIsMinor) return 1;
-                        return 0;
+                        return a.discounted_price - b.discounted_price;
                     });
                 } else {
                     deals = deals.sort(function(a, b) {
