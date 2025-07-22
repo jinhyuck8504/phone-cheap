@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>폰싸게 - 안전한 휴대폰 구매</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
     <style>
         * {
             margin: 0;
@@ -563,6 +564,65 @@
     <div id="notification" class="notification"></div>
 
     <script>
+        // ===========================================
+        // SUPABASE 설정 - 여기에 본인의 키를 입력하세요!
+        // ===========================================
+        
+        // TODO: 본인의 Supabase 프로젝트 정보로 변경하세요
+        var SUPABASE_URL = https://ilxkvchphlkwxdjlnhjj.supabase.co
+        var SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlseGt2Y2hwaGxrd3hkamxuaGpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxNjk1NjYsImV4cCI6MjA2ODc0NTU2Nn0.sjfEM1lkqxOICI4zLHvB3w1EO31CEzKBawhjD2ipV90
+        
+        // Supabase 클라이언트 초기화
+        var supabaseClient = null;
+        
+        function initSupabase() {
+            try {
+                // Supabase 키가 설정되었는지 확인
+                if (SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) {
+                    console.log('⚠️ Supabase 키가 설정되지 않았습니다. 데모 모드로 실행합니다.');
+                    return false;
+                }
+                
+                // Supabase 라이브러리 확인
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('✅ Supabase 연결 성공!');
+                    
+                    // 인증 상태 변화 리스너
+                    supabaseClient.auth.onAuthStateChange(function(event, session) {
+                        console.log('Auth state changed:', event);
+                        
+                        if (event === 'SIGNED_IN' && session && session.user) {
+                            currentUser = {
+                                id: session.user.id,
+                                email: session.user.email,
+                                name: session.user.user_metadata?.name || session.user.email.split('@')[0],
+                                phone: session.user.user_metadata?.phone || '010-0000-0000'
+                            };
+                            updateUIForUser(currentUser);
+                            renderDeals(currentDeals);
+                        } else if (event === 'SIGNED_OUT') {
+                            currentUser = null;
+                            updateUIForGuest();
+                            renderDeals(currentDeals);
+                        }
+                    });
+                    
+                    return true;
+                } else {
+                    console.log('⚠️ Supabase 라이브러리 로드 실패. 데모 모드로 실행합니다.');
+                    return false;
+                }
+            } catch (error) {
+                console.log('⚠️ Supabase 초기화 오류:', error, '. 데모 모드로 실행합니다.');
+                return false;
+            }
+        }
+        
+        // ===========================================
+        // 기존 코드
+        // ===========================================
+        
         // 전역 변수
         var currentUser = null;
         var currentUserType = 'adult';
@@ -724,6 +784,16 @@
 
         // 로그아웃
         function logout() {
+            // Supabase 로그아웃
+            if (supabaseClient) {
+                supabaseClient.auth.signOut().then(function() {
+                    console.log('Supabase 로그아웃 완료');
+                }).catch(function(error) {
+                    console.log('Supabase 로그아웃 오류:', error);
+                });
+            }
+            
+            // UI 업데이트
             currentUser = null;
             updateUIForGuest();
             showNotification('로그아웃되었습니다.', 'success');
@@ -763,19 +833,47 @@
                     return;
                 }
 
-                currentUser = {
-                    id: 'demo-user',
-                    email: email,
-                    name: email.split('@')[0],
-                    phone: '010-1234-5678'
-                };
-                
-                updateUIForUser(currentUser);
-                closeModal('loginModal');
-                showNotification('로그인되었습니다!', 'success');
-                renderDeals(currentDeals);
-                
-                document.getElementById('loginForm').reset();
+                // Supabase 로그인 시도
+                if (supabaseClient) {
+                    supabaseClient.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    }).then(function(result) {
+                        if (result.data.user) {
+                            // Supabase 로그인 성공
+                            currentUser = {
+                                id: result.data.user.id,
+                                email: result.data.user.email,
+                                name: result.data.user.user_metadata?.name || email.split('@')[0],
+                                phone: result.data.user.user_metadata?.phone || '010-1234-5678'
+                            };
+                            updateUIForUser(currentUser);
+                            closeModal('loginModal');
+                            showNotification('로그인되었습니다!', 'success');
+                            renderDeals(currentDeals);
+                            document.getElementById('loginForm').reset();
+                        } else {
+                            showNotification('로그인에 실패했습니다.', 'error');
+                        }
+                    }).catch(function(error) {
+                        console.log('Supabase 로그인 오류:', error);
+                        showNotification('로그인 오류: ' + error.message, 'error');
+                    });
+                } else {
+                    // 데모 로그인 (Supabase 없을 때)
+                    currentUser = {
+                        id: 'demo-user',
+                        email: email,
+                        name: email.split('@')[0],
+                        phone: '010-1234-5678'
+                    };
+                    
+                    updateUIForUser(currentUser);
+                    closeModal('loginModal');
+                    showNotification('로그인되었습니다! (데모 모드)', 'success');
+                    renderDeals(currentDeals);
+                    document.getElementById('loginForm').reset();
+                }
             });
 
             // 회원가입 폼
@@ -783,16 +881,45 @@
                 e.preventDefault();
                 
                 var email = document.getElementById('signupEmail').value;
+                var password = document.getElementById('signupPassword').value;
                 var name = document.getElementById('signupName').value;
+                var phone = document.getElementById('signupPhone').value;
 
-                if (!email || !name) {
+                if (!email || !name || !password || !phone) {
                     showNotification('필수 정보를 입력해주세요.', 'error');
                     return;
                 }
 
-                closeModal('signupModal');
-                showNotification('회원가입이 완료되었습니다!', 'success');
-                document.getElementById('signupForm').reset();
+                // Supabase 회원가입 시도
+                if (supabaseClient) {
+                    supabaseClient.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: {
+                            data: {
+                                name: name,
+                                phone: phone,
+                                user_type: currentUserType
+                            }
+                        }
+                    }).then(function(result) {
+                        if (result.data.user) {
+                            closeModal('signupModal');
+                            showNotification('회원가입이 완료되었습니다! 이메일을 확인해주세요.', 'success');
+                            document.getElementById('signupForm').reset();
+                        } else {
+                            showNotification('회원가입에 실패했습니다.', 'error');
+                        }
+                    }).catch(function(error) {
+                        console.log('Supabase 회원가입 오류:', error);
+                        showNotification('회원가입 오류: ' + error.message, 'error');
+                    });
+                } else {
+                    // 데모 회원가입 (Supabase 없을 때)
+                    closeModal('signupModal');
+                    showNotification('회원가입이 완료되었습니다! (데모 모드)', 'success');
+                    document.getElementById('signupForm').reset();
+                }
             });
 
             // 예약 폼
@@ -830,6 +957,15 @@
             console.log('폰싸게 앱 시작!');
             
             try {
+                // Supabase 초기화 시도
+                var supabaseReady = initSupabase();
+                
+                if (supabaseReady) {
+                    console.log('✅ Supabase 모드로 실행');
+                } else {
+                    console.log('⚠️ 데모 모드로 실행');
+                }
+                
                 setupEventListeners();
                 loadDeals();
                 console.log('폰싸게 앱 초기화 완료!');
