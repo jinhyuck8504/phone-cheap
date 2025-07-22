@@ -62,6 +62,12 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .user-type-btn:hover {
+            background: #e5e7eb;
+            color: #333333;
         }
 
         .user-type-btn.active {
@@ -569,8 +575,8 @@
         // ===========================================
         
         // TODO: 본인의 Supabase 프로젝트 정보로 변경하세요
-        var SUPABASE_URL = https://ilxkvchphlkwxdjlnhjj.supabase.co
-        var SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlseGt2Y2hwaGxrd3hkamxuaGpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxNjk1NjYsImV4cCI6MjA2ODc0NTU2Nn0.sjfEM1lkqxOICI4zLHvB3w1EO31CEzKBawhjD2ipV90
+        var SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';           // 예: 'https://abcdefgh.supabase.co'
+        var SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE'; // 예: 'eyJhbGciOiJIUzI1NiIsInR...'
         
         // Supabase 클라이언트 초기화
         var supabaseClient = null;
@@ -782,7 +788,24 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
-        // 로그아웃
+        // 사용자 타입 변경 함수
+        function setActiveUserType(type, clickedButton) {
+            // 모든 버튼에서 active 클래스 제거
+            var allBtns = document.querySelectorAll('.user-type-btn');
+            for (var i = 0; i < allBtns.length; i++) {
+                allBtns[i].classList.remove('active');
+            }
+            
+            // 클릭된 버튼에 active 클래스 추가
+            clickedButton.classList.add('active');
+            
+            // 현재 사용자 타입 업데이트
+            currentUserType = type;
+            console.log('사용자 타입 변경됨:', currentUserType);
+            
+            // 딜 목록 새로고침
+            loadDeals();
+        }
         function logout() {
             // Supabase 로그아웃
             if (supabaseClient) {
@@ -802,16 +825,29 @@
 
         // 이벤트 리스너 설정
         function setupEventListeners() {
-            // 사용자 타입 버튼
-            var userTypeBtns = document.querySelectorAll('.user-type-btn');
-            for (var i = 0; i < userTypeBtns.length; i++) {
-                userTypeBtns[i].addEventListener('click', function() {
-                    for (var j = 0; j < userTypeBtns.length; j++) {
-                        userTypeBtns[j].classList.remove('active');
-                    }
-                    this.classList.add('active');
-                    currentUserType = this.getAttribute('data-type');
-                    loadDeals();
+            // 사용자 타입 버튼 - 개별적으로 이벤트 추가
+            var adultBtn = document.querySelector('[data-type="adult"]');
+            var seniorBtn = document.querySelector('[data-type="senior"]');
+            var minorBtn = document.querySelector('[data-type="minor"]');
+            
+            if (adultBtn) {
+                adultBtn.addEventListener('click', function() {
+                    console.log('일반 성인 버튼 클릭됨');
+                    setActiveUserType('adult', this);
+                });
+            }
+            
+            if (seniorBtn) {
+                seniorBtn.addEventListener('click', function() {
+                    console.log('시니어 버튼 클릭됨');
+                    setActiveUserType('senior', this);
+                });
+            }
+            
+            if (minorBtn) {
+                minorBtn.addEventListener('click', function() {
+                    console.log('미성년자 버튼 클릭됨');
+                    setActiveUserType('minor', this);
                 });
             }
 
@@ -986,6 +1022,25 @@
             console.log('현재 딜:', currentDeals);
             console.log('현재 사용자 타입:', currentUserType);
         };
+        
+        // 사용자 타입 변경 함수
+        function setActiveUserType(type, clickedButton) {
+            // 모든 버튼에서 active 클래스 제거
+            var allBtns = document.querySelectorAll('.user-type-btn');
+            for (var i = 0; i < allBtns.length; i++) {
+                allBtns[i].classList.remove('active');
+            }
+            
+            // 클릭된 버튼에 active 클래스 추가
+            clickedButton.classList.add('active');
+            
+            // 현재 사용자 타입 업데이트
+            currentUserType = type;
+            console.log('사용자 타입 변경됨:', currentUserType);
+            
+            // 딜 목록 새로고침
+            loadDeals();
+        }
     </script>
 </body>
 </html>
