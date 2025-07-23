@@ -1,0 +1,65 @@
+{
+  "name": "폰싸게 - 스마트폰 할인 플랫폼",
+  "short_name": "폰싸게",
+  "description": "전국 스마트폰 대리점 최저가 딜 모음",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e40af",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "ko",
+  "categories": ["shopping", "business"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%233b82f6'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E📱%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%233b82f6'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E📱%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "딜 검색하기",
+      "short_name": "딜 검색",
+      "description": "최신 스마트폰 할인 딜 찾기",
+      "url": "/?utm_source=homescreen",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2310b981'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E🔍%3C/text%3E%3C/svg%3E",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "예약 내역",
+      "short_name": "예약 확인",
+      "description": "내 예약 현황 확인하기",
+      "url": "/?section=reservations",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f59e0b'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E📅%3C/text%3E%3C/svg%3E",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "대리점 관리",
+      "short_name": "관리자",
+      "description": "대리점 관리 시스템",
+      "url": "/admin.html",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23dc2626'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E🏪%3C/text%3E%3C/svg%3E",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
