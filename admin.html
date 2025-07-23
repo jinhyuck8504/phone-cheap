@@ -694,12 +694,14 @@
                     console.log('🔄 예약 데이터 변경 감지:', storeReservations.length);
                     loadReservationsTable();
                     updateDashboard();
+                    updateAnalytics(); // 통계도 업데이트
                 }
                 
                 if (storeDeals.length !== prevDealCount) {
                     console.log('🔄 딜 데이터 변경 감지:', storeDeals.length);
                     loadDealsTable();
                     updateDashboard();
+                    updateAnalytics(); // 통계도 업데이트
                 }
             }, 2000);
         }
@@ -715,11 +717,13 @@
                     }
                     loadReservationsData();
                     updateDashboard();
+                    updateAnalytics(); // 통계도 업데이트
                     loadReservationsTable();
                     break;
                 case 'deal_added':
                     loadDealsData();
                     updateDashboard();
+                    updateAnalytics(); // 통계도 업데이트
                     loadDealsTable();
                     break;
             }
@@ -780,11 +784,78 @@
                 loadReservationsTable();
             } else if (sectionId === 'dashboard') {
                 updateDashboard();
+            } else if (sectionId === 'analytics') {
+                updateAnalytics();
             }
         }
 
-        // 대시보드 업데이트
-        function updateDashboard() {
+        // 통계 페이지 업데이트
+        function updateAnalytics() {
+            console.log('📈 통계 업데이트 중...');
+            
+            // 이번 달 예약 수 계산
+            var thisMonth = new Date().getMonth();
+            var thisYear = new Date().getFullYear();
+            var thisMonthReservations = storeReservations.filter(function(reservation) {
+                if (!reservation.created_at) return false;
+                var reservationDate = new Date(reservation.created_at);
+                return reservationDate.getMonth() === thisMonth && reservationDate.getFullYear() === thisYear;
+            }).length;
+            
+            // 성사된 거래 (확정된 예약)
+            var confirmedReservations = storeReservations.filter(function(reservation) {
+                return reservation.status === 'confirmed';
+            }).length;
+            
+            // 예약 성사율 계산
+            var successRate = storeReservations.length > 0 ? 
+                Math.round((confirmedReservations / storeReservations.length) * 100) : 0;
+            
+            // 인기 기종 TOP 5 계산
+            var phoneModelCounts = {};
+            storeReservations.forEach(function(reservation) {
+                var model = reservation.phone_model;
+                phoneModelCounts[model] = (phoneModelCounts[model] || 0) + 1;
+            });
+            
+            var sortedModels = Object.entries(phoneModelCounts)
+                .sort(function(a, b) { return b[1] - a[1]; })
+                .slice(0, 5);
+            
+            // DOM 업데이트
+            var analyticsStats = document.querySelectorAll('#analytics .stat-value');
+            if (analyticsStats.length >= 4) {
+                analyticsStats[0].textContent = thisMonthReservations;
+                analyticsStats[1].textContent = confirmedReservations;
+                analyticsStats[2].textContent = successRate + '%';
+                analyticsStats[3].textContent = '5.0/5'; // 고정값
+            }
+            
+            // 인기 기종 TOP 5 업데이트
+            var topList = document.querySelector('#analytics ol');
+            if (topList) {
+                var html = '';
+                if (sortedModels.length > 0) {
+                    sortedModels.forEach(function(item, index) {
+                        html += `<li style="margin-bottom: 8px;">${item[0]} (${item[1]}건 예약)</li>`;
+                    });
+                } else {
+                    html = `
+                        <li style="margin-bottom: 8px;">딜을 등록하면 통계가 업데이트됩니다</li>
+                        <li style="margin-bottom: 8px;">고객 예약 현황을 확인하세요</li>
+                        <li style="margin-bottom: 8px;">매장 성과를 분석해보세요</li>
+                    `;
+                }
+                topList.innerHTML = html;
+            }
+            
+            console.log('📈 통계 업데이트 완료:', {
+                이번달예약: thisMonthReservations,
+                성사된거래: confirmedReservations,
+                성사율: successRate + '%',
+                인기기종: sortedModels.length + '개'
+            });
+        }
             var activeDeals = storeDeals.filter(deal => deal.status === 'active').length;
             var pendingReservations = storeReservations.filter(res => res.status === 'pending').length;
             
@@ -1091,8 +1162,9 @@
                 // 이벤트 리스너 설정
                 setupEventListeners();
                 
-                // 초기 대시보드 표시
+                // 초기 대시보드와 통계 표시
                 updateDashboard();
+                updateAnalytics();
                 
                 console.log('✅ 대리점 관리 시스템 초기화 완료!');
                 
