@@ -580,7 +580,14 @@
             verified: true
         };
         
-        var storeDeals = [
+        // 실시간 연동을 위한 데이터 키
+        var STORAGE_KEYS = {
+            DEALS: 'phonecheap_deals',
+            RESERVATIONS: 'phonecheap_reservations',
+            LAST_UPDATE: 'phonecheap_last_update'
+        };
+        
+        var storeDeals = [];
             {
                 id: 'deal-1',
                 phone_model: '갤럭시 S24',
@@ -613,7 +620,121 @@
             }
         ];
         
-        var storeReservations = [
+        var storeReservations = [];
+
+        // 실시간 데이터 관리 함수들
+        function getAllDeals() {
+            try {
+                var storedDeals = localStorage.getItem(STORAGE_KEYS.DEALS);
+                return storedDeals ? JSON.parse(storedDeals) : [];
+            } catch (error) {
+                console.error('딜 데이터 로드 오류:', error);
+                return [];
+            }
+        }
+
+        function saveAllDeals(deals) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.DEALS, JSON.stringify(deals));
+                localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, Date.now().toString());
+                return true;
+            } catch (error) {
+                console.error('딜 데이터 저장 오류:', error);
+                return false;
+            }
+        }
+
+        function getAllReservations() {
+            try {
+                var storedReservations = localStorage.getItem(STORAGE_KEYS.RESERVATIONS);
+                return storedReservations ? JSON.parse(storedReservations) : [];
+            } catch (error) {
+                console.error('예약 데이터 로드 오류:', error);
+                return [];
+            }
+        }
+
+        function saveAllReservations(reservations) {
+            try {
+                localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(reservations));
+                localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, Date.now().toString());
+                return true;
+            } catch (error) {
+                console.error('예약 데이터 저장 오류:', error);
+                return false;
+            }
+        }
+
+        function triggerStorageUpdate(type, data) {
+            // 커스텀 이벤트로 다른 탭/창에 알림
+            var event = new CustomEvent('phonecheap_update', {
+                detail: { type: type, data: data, timestamp: Date.now() }
+            });
+            window.dispatchEvent(event);
+            
+            // storage 이벤트도 트리거 (다른 탭용)
+            localStorage.setItem('phonecheap_sync_' + Date.now(), JSON.stringify({
+                type: type,
+                data: data,
+                timestamp: Date.now()
+            }));
+        }
+
+        function setupRealTimeSync() {
+            // 다른 탭/창의 변경사항 감지
+            window.addEventListener('storage', function(e) {
+                if (e.key && e.key.startsWith('phonecheap_sync_')) {
+                    try {
+                        var updateData = JSON.parse(e.newValue);
+                        handleRealTimeUpdate(updateData.type, updateData.data);
+                    } catch (error) {
+                        console.error('실시간 동기화 오류:', error);
+                    }
+                }
+            });
+
+            // 같은 탭 내 업데이트 감지
+            window.addEventListener('phonecheap_update', function(e) {
+                handleRealTimeUpdate(e.detail.type, e.detail.data);
+            });
+
+            // 주기적으로 데이터 체크 (3초마다)
+            setInterval(function() {
+                loadReservationsData();
+                updateDashboard();
+            }, 3000);
+        }
+
+        function handleRealTimeUpdate(type, data) {
+            console.log('관리자 실시간 업데이트:', type, data);
+            
+            switch (type) {
+                case 'reservation_added':
+                    showNotification('새로운 예약이 접수되었습니다: ' + data.customer_name + '님', 'success');
+                    loadReservationsData();
+                    updateDashboard();
+                    loadReservationsTable();
+                    break;
+                case 'deal_added':
+                    showNotification('새 딜이 등록되었습니다: ' + data.phone_model, 'success');
+                    loadDealsData();
+                    updateDashboard();
+                    loadDealsTable();
+                    break;
+            }
+        }
+
+        function loadDealsData() {
+            storeDeals = getAllDeals().filter(function(deal) {
+                return deal.store_name === currentStore.name;
+            });
+        }
+
+        function loadReservationsData() {
+            storeReservations = getAllReservations().filter(function(reservation) {
+                return reservation.store_name === currentStore.name;
+            });
+        }
             {
                 id: 'res-1',
                 customer_name: '김철수',
@@ -776,50 +897,106 @@
                 features: features,
                 description: description,
                 status: 'active',
+                store_name: currentStore.name,
+                address: '서울시 강남구 테헤란로 123', // 현재 매장 주소
+                verified: true,
                 created_at: new Date().toISOString().split('T')[0]
             };
             
-            storeDeals.push(newDeal);
-            loadDealsTable();
-            updateDashboard();
-            showNotification('새 딜이 등록되었습니다!', 'success');
+            // 실시간 데이터베이스에 저장
+            var allDeals = getAllDeals();
+            allDeals.push(newDeal);
             
-            // 폼 초기화
-            document.getElementById('dealForm').reset();
+            if (saveAllDeals(allDeals)) {
+                storeDeals.push(newDeal);
+                loadDealsTable();
+                updateDashboard();
+                showNotification('새 딜이 등록되었습니다!', 'success');
+                
+                // 다른 탭/창에 알림
+                triggerStorageUpdate('deal_added', newDeal);
+                
+                // 폼 초기화
+                document.getElementById('dealForm').reset();
+            } else {
+                showNotification('딜 등록 중 오류가 발생했습니다.', 'error');
+            }
         }
 
         // 딜 상태 토글
         function toggleDealStatus(dealId) {
-            var deal = storeDeals.find(d => d.id === dealId);
-            if (deal) {
-                deal.status = deal.status === 'active' ? 'inactive' : 'active';
-                loadDealsTable();
-                updateDashboard();
-                showNotification('딜 상태가 변경되었습니다.', 'success');
-            }
-        }
-
-        // 딜 수정
-        function editDeal(dealId) {
-            var deal = storeDeals.find(d => d.id === dealId);
-            if (deal) {
-                document.getElementById('phoneModel').value = deal.phone_model;
-                document.getElementById('carrier').value = deal.carrier;
-                document.getElementById('originalPrice').value = deal.original_price;
-                document.getElementById('discountedPrice').value = deal.discounted_price;
-                document.getElementById('features').value = deal.features.join(', ');
-                document.getElementById('description').value = deal.description || '';
+            var allDeals = getAllDeals();
+            var dealIndex = allDeals.findIndex(d => d.id === dealId);
+            
+            if (dealIndex !== -1) {
+                allDeals[dealIndex].status = allDeals[dealIndex].status === 'active' ? 'inactive' : 'active';
                 
-                showNotification('딜 정보를 수정 폼에 불러왔습니다.', 'success');
-                showSection('deals');
+                if (saveAllDeals(allDeals)) {
+                    // 로컬 데이터도 업데이트
+                    var localDealIndex = storeDeals.findIndex(d => d.id === dealId);
+                    if (localDealIndex !== -1) {
+                        storeDeals[localDealIndex].status = allDeals[dealIndex].status;
+                    }
+                    
+                    loadDealsTable();
+                    updateDashboard();
+                    showNotification('딜 상태가 변경되었습니다.', 'success');
+                    
+                    // 다른 탭에 알림
+                    triggerStorageUpdate('deal_updated', allDeals[dealIndex]);
+                } else {
+                    showNotification('상태 변경 중 오류가 발생했습니다.', 'error');
+                }
             }
         }
 
         // 예약 승인
         function confirmReservation(reservationId) {
-            var reservation = storeReservations.find(r => r.id === reservationId);
-            if (reservation) {
-                reservation.status = 'confirmed';
+            var allReservations = getAllReservations();
+            var reservationIndex = allReservations.findIndex(r => r.id === reservationId);
+            
+            if (reservationIndex !== -1) {
+                allReservations[reservationIndex].status = 'confirmed';
+                
+                if (saveAllReservations(allReservations)) {
+                    // 로컬 데이터도 업데이트
+                    var localReservationIndex = storeReservations.findIndex(r => r.id === reservationId);
+                    if (localReservationIndex !== -1) {
+                        storeReservations[localReservationIndex].status = 'confirmed';
+                    }
+                    
+                    loadReservationsTable();
+                    updateDashboard();
+                    showNotification('예약이 승인되었습니다.', 'success');
+                } else {
+                    showNotification('예약 승인 중 오류가 발생했습니다.', 'error');
+                }
+            }
+        }
+
+        // 예약 거절
+        function cancelReservation(reservationId) {
+            var allReservations = getAllReservations();
+            var reservationIndex = allReservations.findIndex(r => r.id === reservationId);
+            
+            if (reservationIndex !== -1) {
+                allReservations[reservationIndex].status = 'cancelled';
+                
+                if (saveAllReservations(allReservations)) {
+                    // 로컬 데이터도 업데이트
+                    var localReservationIndex = storeReservations.findIndex(r => r.id === reservationId);
+                    if (localReservationIndex !== -1) {
+                        storeReservations[localReservationIndex].status = 'cancelled';
+                    }
+                    
+                    loadReservationsTable();
+                    updateDashboard();
+                    showNotification('예약이 거절되었습니다.', 'success');
+                } else {
+                    showNotification('예약 거절 중 오류가 발생했습니다.', 'error');
+                }
+            }
+        }reservation.status = 'confirmed';
                 loadReservationsTable();
                 updateDashboard();
                 showNotification('예약이 승인되었습니다.', 'success');
