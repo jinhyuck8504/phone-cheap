@@ -666,6 +666,8 @@
         }
 
         function triggerStorageUpdate(type, data) {
+            console.log('📢 실시간 알림 발송:', type, data);
+            
             // 커스텀 이벤트로 다른 탭/창에 알림
             var event = new CustomEvent('phonecheap_update', {
                 detail: { type: type, data: data, timestamp: Date.now() }
@@ -673,11 +675,20 @@
             window.dispatchEvent(event);
             
             // storage 이벤트도 트리거 (다른 탭용)
-            localStorage.setItem('phonecheap_sync_' + Date.now(), JSON.stringify({
+            var syncData = {
                 type: type,
                 data: data,
                 timestamp: Date.now()
-            }));
+            };
+            
+            localStorage.setItem('phonecheap_sync_' + Date.now(), JSON.stringify(syncData));
+            
+            // 즉시 제거 (메모리 절약)
+            setTimeout(function() {
+                localStorage.removeItem('phonecheap_sync_' + (Date.now() - 1000));
+            }, 1000);
+            
+            console.log('✅ 실시간 알림 발송 완료');
         }
 
         function setupRealTimeSync() {
