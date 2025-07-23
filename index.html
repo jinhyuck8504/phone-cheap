@@ -858,6 +858,13 @@
         var selectedDeal = null;
         var supabaseClient = null;
 
+        // 실시간 연동을 위한 데이터 키
+        var STORAGE_KEYS = {
+            DEALS: 'phonecheap_deals',
+            RESERVATIONS: 'phonecheap_reservations',
+            LAST_UPDATE: 'phonecheap_last_update'
+        };
+
         // 샘플 딜 데이터
         var sampleDeals = [
             {
@@ -1060,6 +1067,121 @@
             }
         ];
 
+        // 실시간 데이터 관리 함수들
+        function initializeData() {
+            // 로컬스토리지에 딜 데이터가 없으면 샘플 데이터로 초기화
+            var storedDeals = localStorage.getItem(STORAGE_KEYS.DEALS);
+            if (!storedDeals) {
+                localStorage.setItem(STORAGE_KEYS.DEALS, JSON.stringify(sampleDeals));
+                localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, Date.now().toString());
+            }
+        }
+
+        function getAllDeals() {
+            try {
+                var storedDeals = localStorage.getItem(STORAGE_KEYS.DEALS);
+                return storedDeals ? JSON.parse(storedDeals) : sampleDeals;
+            } catch (error) {
+                console.error('딜 데이터 로드 오류:', error);
+                return sampleDeals;
+            }
+        }
+
+        function saveReservation(reservationData) {
+            try {
+                var reservations = JSON.parse(localStorage.getItem(STORAGE_KEYS.RESERVATIONS) || '[]');
+                var newReservation = {
+                    id: 'res-' + Date.now(),
+                    ...reservationData,
+                    created_at: new Date().toISOString(),
+                    status: 'pending'
+                };
+                
+                reservations.push(newReservation);
+                localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(reservations));
+                localStorage.setItem(STORAGE_KEYS.LAST_UPDATE, Date.now().toString());
+                
+                // 다른 탭/창에 알림
+                triggerStorageUpdate('reservation_added', newReservation);
+                
+                return newReservation;
+            } catch (error) {
+                console.error('예약 저장 오류:', error);
+                return null;
+            }
+        }
+
+        function triggerStorageUpdate(type, data) {
+            // 커스텀 이벤트로 다른 탭/창에 알림
+            var event = new CustomEvent('phonecheap_update', {
+                detail: { type: type, data: data, timestamp: Date.now() }
+            });
+            window.dispatchEvent(event);
+            
+            // storage 이벤트도 트리거 (다른 탭용)
+            localStorage.setItem('phonecheap_sync_' + Date.now(), JSON.stringify({
+                type: type,
+                data: data,
+                timestamp: Date.now()
+            }));
+        }
+
+        function setupRealTimeSync() {
+            // 다른 탭/창의 변경사항 감지
+            window.addEventListener('storage', function(e) {
+                if (e.key && e.key.startsWith('phonecheap_sync_')) {
+                    try {
+                        var updateData = JSON.parse(e.newValue);
+                        handleRealTimeUpdate(updateData.type, updateData.data);
+                    } catch (error) {
+                        console.error('실시간 동기화 오류:', error);
+                    }
+                }
+            });
+
+            // 같은 탭 내 업데이트 감지
+            window.addEventListener('phonecheap_update', function(e) {
+                handleRealTimeUpdate(e.detail.type, e.detail.data);
+            });
+
+            // 주기적으로 데이터 체크 (5초마다)
+            setInterval(function() {
+                checkForUpdates();
+            }, 5000);
+        }
+
+        function handleRealTimeUpdate(type, data) {
+            console.log('실시간 업데이트 받음:', type, data);
+            
+            switch (type) {
+                case 'deal_added':
+                    showNotification('새로운 딜이 등록되었습니다: ' + data.phone_model, 'success');
+                    loadDeals(); // 딜 목록 새로고침
+                    break;
+                case 'deal_updated':
+                    showNotification('딜 정보가 업데이트되었습니다: ' + data.phone_model, 'success');
+                    loadDeals();
+                    break;
+                case 'reservation_added':
+                    // 메인 페이지에서는 예약 알림만 표시
+                    console.log('새 예약:', data);
+                    break;
+            }
+        }
+
+        var lastUpdateCheck = 0;
+        function checkForUpdates() {
+            try {
+                var lastUpdate = parseInt(localStorage.getItem(STORAGE_KEYS.LAST_UPDATE) || '0');
+                if (lastUpdate > lastUpdateCheck) {
+                    lastUpdateCheck = lastUpdate;
+                    loadDeals(); // 데이터 새로고침
+                }
+            } catch (error) {
+                console.error('업데이트 체크 오류:', error);
+            }
+        }
+
         // 딜 정렬 함수
         function sortDeals(deals, sortBy) {
             var sortedDeals = deals.slice();
@@ -1099,7 +1221,7 @@
             }
         }
 
-        // 딜 목록 로드
+        // 딜 목록 로드 (실시간 데이터 사용)
         function loadDeals() {
             var dealsGrid = document.getElementById('dealsGrid');
             if (dealsGrid) {
@@ -1113,7 +1235,8 @@
                 var brand = document.getElementById('brand') ? document.getElementById('brand').value : '';
                 var sortBy = document.getElementById('sortBy') ? document.getElementById('sortBy').value : 'price-low';
                 
-                var deals = sampleDeals.slice();
+                // 실시간 데이터에서 딜 목록 가져오기
+                var deals = getAllDeals();
                 
                 // 필터 적용
                 if (location) {
@@ -1409,10 +1532,29 @@
                     reservationForm.addEventListener('submit', function(e) {
                         e.preventDefault();
                         
-                        closeModal('reservationModal');
-                        showNotification('예약이 성공적으로 접수되었습니다!', 'success');
-                        document.getElementById('reservationForm').reset();
-                        selectedDeal = null;
+                        // 예약 데이터 수집
+                        var reservationData = {
+                            customer_name: document.getElementById('customerName').value,
+                            customer_phone: document.getElementById('customerPhone').value,
+                            phone_model: selectedDeal.phone_model,
+                            store_name: selectedDeal.store_name,
+                            visit_date: document.getElementById('visitDate').value,
+                            visit_time: document.getElementById('visitTime').value,
+                            requirements: document.getElementById('requirements').value || '',
+                            deal_id: selectedDeal.id
+                        };
+                        
+                        // 실시간 데이터베이스에 저장
+                        var savedReservation = saveReservation(reservationData);
+                        
+                        if (savedReservation) {
+                            closeModal('reservationModal');
+                            showNotification('예약이 성공적으로 접수되었습니다! 매장에서 확인 후 연락드릴 예정입니다.', 'success');
+                            document.getElementById('reservationForm').reset();
+                            selectedDeal = null;
+                        } else {
+                            showNotification('예약 처리 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+                        }
                     });
                 }
 
@@ -1440,9 +1582,16 @@
             console.log('폰싸게 앱 시작!');
             
             try {
+                // 실시간 데이터 초기화
+                initializeData();
+                
+                // 실시간 동기화 설정
+                setupRealTimeSync();
+                
                 setupEventListeners();
                 loadDeals();
-                console.log('폰싸게 앱 초기화 완료!');
+                
+                console.log('폰싸게 앱 초기화 완료! (실시간 연동 활성화)');
                 
             } catch (error) {
                 console.error('앱 초기화 오류:', error);
