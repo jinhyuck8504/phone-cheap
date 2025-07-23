@@ -1,4 +1,104 @@
-<!DOCTYPE html>
+// 앱 초기화
+        function initApp() {
+            console.log('폰싸게 앱 시작!');
+            
+            try {
+                // PWA 기능 초기화
+                initPWA();
+                
+                // 실시간 데이터 초기화
+                initializeData();
+                
+                // 실시간 동기화 설정
+                setupRealTimeSync();
+                
+                setupEventListeners();
+                loadDeals();
+                
+                console.log('폰싸게 앱 초기화 완료! (PWA + 실시간 연동 활성화)');
+                
+            } catch (error) {
+                console.error('앱 초기화 오류:', error);
+                var dealsGrid = document.getElementById('dealsGrid');
+                if (dealsGrid) {
+                    dealsGrid.innerHTML = '<div class="error">앱 로드 중 오류가 발생했습니다.</div>';
+                }
+            }
+        }
+
+        // PWA 기능 초기화
+        function initPWA() {
+            console.log('📱 PWA 기능 초기화 중...');
+            
+            // Service Worker 등록
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(registration => {
+                            console.log('✅ Service Worker 등록 성공:', registration.scope);
+                            
+                            // 업데이트 확인
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        showPWAUpdateNotification();
+                                    }
+                                });
+                            });
+                        })
+                        .catch(error => {
+                            console.error('❌ Service Worker 등록 실패:', error);
+                        });
+                });
+                
+                // Service Worker 메시지 수신
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data.type === 'SYNC_DATA') {
+                        console.log('🔄 백그라운드 동기화:', event.data.message);
+                        loadDeals(); // 데이터 새로고침
+                    }
+                });
+            }
+            
+            // 앱 설치 프롬프트
+            setupInstallPrompt();
+            
+            // 연결 상태 모니터링
+            setupConnectionMonitoring();
+            
+            // PWA 특성 감지
+            detectPWAMode();
+            
+            console.log('✅ PWA 기능 초기화 완료');
+        }
+
+        // 앱 설치 프롬프트 설정
+        let deferredPrompt;
+        function setupInstallPrompt() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                console.log('📱 설치 프롬프트 준비됨');
+                e.preventDefault();
+                deferredPrompt = e;
+                showInstallButton();
+            });
+
+            // 설치 완료 감지
+            window.addEventListener('appinstalled', (evt) => {
+                console.log('🎉 앱이 설치되었습니다!');
+                showNotification('폰싸게 앱이 설치되었습니다! 홈화면에서 확인하세요.', 'success');
+                hideInstallButton();
+            });
+        }
+
+        // 설치 버튼 표시
+        function showInstallButton() {
+            var installBtn = document.createElement('button');
+            installBtn.id = 'installBtn';
+            installBtn.innerHTML = '📱 앱 설치하기';
+            installBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
