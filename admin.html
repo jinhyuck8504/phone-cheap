@@ -69,7 +69,7 @@
             transition: all 0.2s ease;
         }
 
-        .nav-btn:hover, .nav-btn.active {
+        .nav-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
 
@@ -110,6 +110,7 @@
             border-radius: 8px;
             transition: all 0.2s ease;
             font-weight: 500;
+            cursor: pointer;
         }
 
         .sidebar-menu a:hover, .sidebar-menu a.active {
@@ -368,11 +369,11 @@
         <div class="admin-content">
             <aside class="admin-sidebar">
                 <ul class="sidebar-menu">
-                    <li><a href="#dashboard" class="menu-link active" onclick="showSection('dashboard')">📊 대시보드</a></li>
-                    <li><a href="#deals" class="menu-link" onclick="showSection('deals')">📱 딜 관리</a></li>
-                    <li><a href="#reservations" class="menu-link" onclick="showSection('reservations')">📅 예약 관리</a></li>
-                    <li><a href="#store" class="menu-link" onclick="showSection('store')">🏪 매장 정보</a></li>
-                    <li><a href="#analytics" class="menu-link" onclick="showSection('analytics')">📈 통계</a></li>
+                    <li><a href="javascript:void(0)" class="menu-link active" onclick="showSection('dashboard')">📊 대시보드</a></li>
+                    <li><a href="javascript:void(0)" class="menu-link" onclick="showSection('deals')">📱 딜 관리</a></li>
+                    <li><a href="javascript:void(0)" class="menu-link" onclick="showSection('reservations')">📅 예약 관리</a></li>
+                    <li><a href="javascript:void(0)" class="menu-link" onclick="showSection('store')">🏪 매장 정보</a></li>
+                    <li><a href="javascript:void(0)" class="menu-link" onclick="showSection('analytics')">📈 통계</a></li>
                 </ul>
             </aside>
 
@@ -383,19 +384,19 @@
                     
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-value" id="totalDeals">8</div>
+                            <div class="stat-value" id="totalDeals">0</div>
                             <div class="stat-label">등록된 딜</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value" id="activeDeals">6</div>
+                            <div class="stat-value" id="activeDeals">0</div>
                             <div class="stat-label">활성 딜</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value" id="totalReservations">12</div>
+                            <div class="stat-value" id="totalReservations">0</div>
                             <div class="stat-label">총 예약</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value" id="pendingReservations">3</div>
+                            <div class="stat-value" id="pendingReservations">0</div>
                             <div class="stat-label">대기 중 예약</div>
                         </div>
                     </div>
@@ -404,13 +405,13 @@
                         <h3 style="margin-bottom: 16px;">📈 오늘의 현황</h3>
                         <ul style="list-style: none; padding: 0;">
                             <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                                🔥 갤럭시 S24 - 오늘 2건 예약 접수
+                                🔥 새로운 딜을 등록해보세요!
                             </li>
                             <li style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                                📱 아이폰 15 Pro - 재고 부족 알림
+                                📱 좌측 메뉴에서 "딜 관리"를 클릭하세요
                             </li>
                             <li style="padding: 8px 0;">
-                                ✨ 새로운 예약 3건 검토 필요
+                                ✨ 예약이 들어오면 실시간으로 알림을 받습니다
                             </li>
                         </ul>
                     </div>
@@ -425,7 +426,7 @@
                         <form id="dealForm" class="form-grid">
                             <div class="form-group">
                                 <label for="phoneModel">휴대폰 모델</label>
-                                <input type="text" id="phoneModel" placeholder="예: 갤럭시 S24" required>
+                                <input type="text" id="phoneModel" placeholder="예: 갤럭시 S25" required>
                             </div>
                             <div class="form-group">
                                 <label for="carrier">통신사</label>
@@ -471,7 +472,11 @@
                             </tr>
                         </thead>
                         <tbody id="dealsTableBody">
-                            <!-- JavaScript에서 동적으로 생성 -->
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 20px; color: #666;">
+                                    등록된 딜이 없습니다. 새 딜을 등록해보세요!
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -493,7 +498,11 @@
                             </tr>
                         </thead>
                         <tbody id="reservationsTableBody">
-                            <!-- JavaScript에서 동적으로 생성 -->
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 20px; color: #666;">
+                                    예약이 없습니다.
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -537,19 +546,19 @@
                     
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-value">24</div>
+                            <div class="stat-value">0</div>
                             <div class="stat-label">이번 달 예약</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value">18</div>
+                            <div class="stat-value">0</div>
                             <div class="stat-label">성사된 거래</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value">75%</div>
+                            <div class="stat-value">0%</div>
                             <div class="stat-label">예약 성사율</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value">4.8/5</div>
+                            <div class="stat-value">5.0/5</div>
                             <div class="stat-label">고객 만족도</div>
                         </div>
                     </div>
@@ -557,11 +566,9 @@
                     <div class="form-section">
                         <h3 style="margin-bottom: 16px;">📊 인기 기종 TOP 5</h3>
                         <ol style="padding-left: 20px;">
-                            <li style="margin-bottom: 8px;">갤럭시 S24 - 8건 예약</li>
-                            <li style="margin-bottom: 8px;">아이폰 15 Pro - 6건 예약</li>
-                            <li style="margin-bottom: 8px;">갤럭시 S23 - 4건 예약</li>
-                            <li style="margin-bottom: 8px;">아이폰 15 - 3건 예약</li>
-                            <li style="margin-bottom: 8px;">갤럭시 A54 - 3건 예약</li>
+                            <li style="margin-bottom: 8px;">딜을 등록하면 통계가 업데이트됩니다</li>
+                            <li style="margin-bottom: 8px;">고객 예약 현황을 확인하세요</li>
+                            <li style="margin-bottom: 8px;">매장 성과를 분석해보세요</li>
                         </ol>
                     </div>
                 </div>
@@ -571,7 +578,6 @@
 
     <div id="notification" class="notification"></div>
 
-    <!-- 대리점 관리 JavaScript -->
     <script>
         // 전역 변수
         var currentStore = {
@@ -588,38 +594,6 @@
         };
         
         var storeDeals = [];
-            {
-                id: 'deal-1',
-                phone_model: '갤럭시 S24',
-                carrier: 'SKT',
-                original_price: 1199000,
-                discounted_price: 799000,
-                features: ['최신기종', 'AI 카메라', '무료설치'],
-                status: 'active',
-                created_at: '2025-01-20'
-            },
-            {
-                id: 'deal-2',
-                phone_model: '아이폰 15 Pro',
-                carrier: 'KT',
-                original_price: 1599000,
-                discounted_price: 1199000,
-                features: ['Pro 모델', '티타늄', '48MP 카메라'],
-                status: 'active',
-                created_at: '2025-01-19'
-            },
-            {
-                id: 'deal-3',
-                phone_model: '갤럭시 S23',
-                carrier: 'LGU+',
-                original_price: 999000,
-                discounted_price: 599000,
-                features: ['프리미엄', '카메라', '방문설치'],
-                status: 'inactive',
-                created_at: '2025-01-18'
-            }
-        ];
-        
         var storeReservations = [];
 
         // 실시간 데이터 관리 함수들
@@ -668,13 +642,7 @@
         function triggerStorageUpdate(type, data) {
             console.log('📢 실시간 알림 발송:', type, data);
             
-            // 커스텀 이벤트로 다른 탭/창에 알림
-            var event = new CustomEvent('phonecheap_update', {
-                detail: { type: type, data: data, timestamp: Date.now() }
-            });
-            window.dispatchEvent(event);
-            
-            // storage 이벤트도 트리거 (다른 탭용)
+            // storage 이벤트 트리거 (다른 탭용)
             var syncData = {
                 type: type,
                 data: data,
@@ -685,13 +653,20 @@
             
             // 즉시 제거 (메모리 절약)
             setTimeout(function() {
-                localStorage.removeItem('phonecheap_sync_' + (Date.now() - 1000));
+                var keys = Object.keys(localStorage);
+                keys.forEach(function(key) {
+                    if (key.startsWith('phonecheap_sync_') && Date.now() - parseInt(key.split('_')[2]) > 5000) {
+                        localStorage.removeItem(key);
+                    }
+                });
             }, 1000);
             
             console.log('✅ 실시간 알림 발송 완료');
         }
 
         function setupRealTimeSync() {
+            console.log('🔄 관리자 실시간 동기화 시작');
+            
             // 다른 탭/창의 변경사항 감지
             window.addEventListener('storage', function(e) {
                 if (e.key && e.key.startsWith('phonecheap_sync_')) {
@@ -704,11 +679,6 @@
                 }
             });
 
-            // 같은 탭 내 업데이트 감지
-            window.addEventListener('phonecheap_update', function(e) {
-                handleRealTimeUpdate(e.detail.type, e.detail.data);
-            });
-
             // 주기적으로 데이터 체크 (3초마다)
             setInterval(function() {
                 loadReservationsData();
@@ -717,17 +687,16 @@
         }
 
         function handleRealTimeUpdate(type, data) {
-            console.log('관리자 실시간 업데이트:', type, data);
+            console.log('🎯 관리자 실시간 업데이트:', type, data);
             
             switch (type) {
                 case 'reservation_added':
-                    showNotification('새로운 예약이 접수되었습니다: ' + data.customer_name + '님', 'success');
+                    showNotification('🎉 새로운 예약이 접수되었습니다: ' + data.customer_name + '님', 'success');
                     loadReservationsData();
                     updateDashboard();
                     loadReservationsTable();
                     break;
                 case 'deal_added':
-                    showNotification('새 딜이 등록되었습니다: ' + data.phone_model, 'success');
                     loadDealsData();
                     updateDashboard();
                     loadDealsTable();
@@ -746,40 +715,11 @@
                 return reservation.store_name === currentStore.name;
             });
         }
-            {
-                id: 'res-1',
-                customer_name: '김철수',
-                customer_phone: '010-1234-5678',
-                phone_model: '갤럭시 S24',
-                visit_date: '2025-01-25',
-                visit_time: '14:00',
-                status: 'pending',
-                created_at: '2025-01-23'
-            },
-            {
-                id: 'res-2',
-                customer_name: '이영희',
-                customer_phone: '010-9876-5432',
-                phone_model: '아이폰 15 Pro',
-                visit_date: '2025-01-24',
-                visit_time: '11:00',
-                status: 'confirmed',
-                created_at: '2025-01-22'
-            },
-            {
-                id: 'res-3',
-                customer_name: '박민수',
-                customer_phone: '010-5555-1234',
-                phone_model: '갤럭시 S23',
-                visit_date: '2025-01-26',
-                visit_time: '16:00',
-                status: 'pending',
-                created_at: '2025-01-23'
-            }
-        ];
 
         // 섹션 전환
         function showSection(sectionId) {
+            console.log('섹션 전환:', sectionId);
+            
             // 모든 섹션 숨기기
             var sections = document.querySelectorAll('.section');
             sections.forEach(function(section) {
@@ -793,10 +733,16 @@
             });
             
             // 선택된 섹션 보이기
-            document.getElementById(sectionId).classList.add('active');
+            var targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
             
-            // 해당 메뉴 링크 활성화
-            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            // 클릭된 메뉴 링크 활성화
+            var clickedLink = document.querySelector(`[onclick*="${sectionId}"]`);
+            if (clickedLink) {
+                clickedLink.classList.add('active');
+            }
             
             // 섹션별 데이터 로드
             if (sectionId === 'deals') {
@@ -813,15 +759,22 @@
             var activeDeals = storeDeals.filter(deal => deal.status === 'active').length;
             var pendingReservations = storeReservations.filter(res => res.status === 'pending').length;
             
-            document.getElementById('totalDeals').textContent = storeDeals.length;
-            document.getElementById('activeDeals').textContent = activeDeals;
-            document.getElementById('totalReservations').textContent = storeReservations.length;
-            document.getElementById('pendingReservations').textContent = pendingReservations;
+            var totalDealsEl = document.getElementById('totalDeals');
+            var activeDealsEl = document.getElementById('activeDeals');
+            var totalReservationsEl = document.getElementById('totalReservations');
+            var pendingReservationsEl = document.getElementById('pendingReservations');
+            
+            if (totalDealsEl) totalDealsEl.textContent = storeDeals.length;
+            if (activeDealsEl) activeDealsEl.textContent = activeDeals;
+            if (totalReservationsEl) totalReservationsEl.textContent = storeReservations.length;
+            if (pendingReservationsEl) pendingReservationsEl.textContent = pendingReservations;
         }
 
         // 딜 테이블 로드
         function loadDealsTable() {
             var tbody = document.getElementById('dealsTableBody');
+            if (!tbody) return;
+            
             var html = '';
             
             storeDeals.forEach(function(deal) {
@@ -849,23 +802,31 @@
                 `;
             });
             
+            if (html === '') {
+                html = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">등록된 딜이 없습니다. 새 딜을 등록해보세요!</td></tr>';
+            }
+            
             tbody.innerHTML = html;
         }
 
         // 예약 테이블 로드
         function loadReservationsTable() {
             var tbody = document.getElementById('reservationsTableBody');
+            if (!tbody) return;
+            
             var html = '';
             
             storeReservations.forEach(function(reservation) {
                 var statusClass = reservation.status === 'pending' ? 'status-pending' : 
-                                reservation.status === 'confirmed' ? 'status-active' : 'status-inactive';
+                               reservation.status === 'confirmed' ? 'status-active' : 'status-inactive';
                 var statusText = reservation.status === 'pending' ? '대기중' : 
                                reservation.status === 'confirmed' ? '확정' : '취소';
                 
+                var createdDate = reservation.created_at ? reservation.created_at.split('T')[0] : '알 수 없음';
+                
                 html += `
                     <tr>
-                        <td>${reservation.created_at}</td>
+                        <td>${createdDate}</td>
                         <td>${reservation.customer_name}</td>
                         <td>${reservation.customer_phone}</td>
                         <td>${reservation.phone_model}</td>
@@ -885,6 +846,10 @@
                 `;
             });
             
+            if (html === '') {
+                html = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">예약이 없습니다.</td></tr>';
+            }
+            
             tbody.innerHTML = html;
         }
 
@@ -899,6 +864,11 @@
             var features = document.getElementById('features').value.split(',').map(f => f.trim());
             var description = document.getElementById('description').value;
             
+            if (!phoneModel || !carrier || !originalPrice || !discountedPrice) {
+                showNotification('모든 필수 항목을 입력해주세요.', 'error');
+                return;
+            }
+            
             var newDeal = {
                 id: 'deal-' + Date.now(),
                 phone_model: phoneModel,
@@ -909,7 +879,7 @@
                 description: description,
                 status: 'active',
                 store_name: currentStore.name,
-                address: '서울시 강남구 테헤란로 123', // 현재 매장 주소
+                address: '서울시 강남구 테헤란로 123',
                 verified: true,
                 created_at: new Date().toISOString().split('T')[0]
             };
@@ -922,7 +892,7 @@
                 storeDeals.push(newDeal);
                 loadDealsTable();
                 updateDashboard();
-                showNotification('새 딜이 등록되었습니다!', 'success');
+                showNotification('🎉 새 딜이 등록되었습니다!', 'success');
                 
                 // 다른 탭/창에 알림
                 triggerStorageUpdate('deal_added', newDeal);
@@ -943,7 +913,6 @@
                 allDeals[dealIndex].status = allDeals[dealIndex].status === 'active' ? 'inactive' : 'active';
                 
                 if (saveAllDeals(allDeals)) {
-                    // 로컬 데이터도 업데이트
                     var localDealIndex = storeDeals.findIndex(d => d.id === dealId);
                     if (localDealIndex !== -1) {
                         storeDeals[localDealIndex].status = allDeals[dealIndex].status;
@@ -953,11 +922,26 @@
                     updateDashboard();
                     showNotification('딜 상태가 변경되었습니다.', 'success');
                     
-                    // 다른 탭에 알림
                     triggerStorageUpdate('deal_updated', allDeals[dealIndex]);
                 } else {
                     showNotification('상태 변경 중 오류가 발생했습니다.', 'error');
                 }
+            }
+        }
+
+        // 딜 수정
+        function editDeal(dealId) {
+            var deal = storeDeals.find(d => d.id === dealId);
+            if (deal) {
+                document.getElementById('phoneModel').value = deal.phone_model;
+                document.getElementById('carrier').value = deal.carrier;
+                document.getElementById('originalPrice').value = deal.original_price;
+                document.getElementById('discountedPrice').value = deal.discounted_price;
+                document.getElementById('features').value = deal.features.join(', ');
+                document.getElementById('description').value = deal.description || '';
+                
+                showNotification('딜 정보를 수정 폼에 불러왔습니다.', 'success');
+                showSection('deals');
             }
         }
 
@@ -970,7 +954,6 @@
                 allReservations[reservationIndex].status = 'confirmed';
                 
                 if (saveAllReservations(allReservations)) {
-                    // 로컬 데이터도 업데이트
                     var localReservationIndex = storeReservations.findIndex(r => r.id === reservationId);
                     if (localReservationIndex !== -1) {
                         storeReservations[localReservationIndex].status = 'confirmed';
@@ -994,7 +977,6 @@
                 allReservations[reservationIndex].status = 'cancelled';
                 
                 if (saveAllReservations(allReservations)) {
-                    // 로컬 데이터도 업데이트
                     var localReservationIndex = storeReservations.findIndex(r => r.id === reservationId);
                     if (localReservationIndex !== -1) {
                         storeReservations[localReservationIndex].status = 'cancelled';
@@ -1006,22 +988,6 @@
                 } else {
                     showNotification('예약 거절 중 오류가 발생했습니다.', 'error');
                 }
-            }
-        }reservation.status = 'confirmed';
-                loadReservationsTable();
-                updateDashboard();
-                showNotification('예약이 승인되었습니다.', 'success');
-            }
-        }
-
-        // 예약 거절
-        function cancelReservation(reservationId) {
-            var reservation = storeReservations.find(r => r.id === reservationId);
-            if (reservation) {
-                reservation.status = 'cancelled';
-                loadReservationsTable();
-                updateDashboard();
-                showNotification('예약이 거절되었습니다.', 'success');
             }
         }
 
@@ -1035,7 +1001,8 @@
 희망기종: ${reservation.phone_model}
 방문예정: ${reservation.visit_date} ${reservation.visit_time}
 상태: ${reservation.status === 'confirmed' ? '확정' : reservation.status === 'cancelled' ? '취소' : '대기중'}
-예약일: ${reservation.created_at}`);
+예약일: ${reservation.created_at}
+요청사항: ${reservation.requirements || '없음'}`);
             }
         }
 
@@ -1048,6 +1015,8 @@
         // 알림 표시
         function showNotification(message, type) {
             var notification = document.getElementById('notification');
+            if (!notification) return;
+            
             notification.textContent = message;
             notification.className = 'notification ' + (type === 'error' ? 'error' : '') + ' show';
             
@@ -1080,15 +1049,29 @@
 
         // 앱 초기화
         function initAdminApp() {
-            console.log('대리점 관리 시스템 시작!');
+            console.log('🏪 대리점 관리 시스템 시작!');
             
             try {
+                // 실시간 데이터 로드
+                loadDealsData();
+                loadReservationsData();
+                
+                // 실시간 동기화 설정
+                setupRealTimeSync();
+                
+                // 이벤트 리스너 설정
                 setupEventListeners();
+                
+                // 초기 대시보드 표시
                 updateDashboard();
-                loadDealsTable();
-                console.log('대리점 관리 시스템 초기화 완료!');
+                
+                console.log('✅ 대리점 관리 시스템 초기화 완료!');
+                
+                // 초기 알림
+                showNotification('🎉 관리 시스템이 준비되었습니다!', 'success');
+                
             } catch (error) {
-                console.error('관리 시스템 초기화 오류:', error);
+                console.error('❌ 관리 시스템 초기화 오류:', error);
                 showNotification('시스템 로드 중 오류가 발생했습니다.', 'error');
             }
         }
