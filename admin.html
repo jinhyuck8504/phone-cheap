@@ -670,8 +670,10 @@
             // 다른 탭/창의 변경사항 감지
             window.addEventListener('storage', function(e) {
                 if (e.key && e.key.startsWith('phonecheap_sync_')) {
+                    console.log('📨 Storage 이벤트 수신:', e.key);
                     try {
                         var updateData = JSON.parse(e.newValue);
+                        console.log('📦 수신된 데이터:', updateData);
                         handleRealTimeUpdate(updateData.type, updateData.data);
                     } catch (error) {
                         console.error('실시간 동기화 오류:', error);
@@ -679,11 +681,27 @@
                 }
             });
 
-            // 주기적으로 데이터 체크 (3초마다)
+            // 주기적으로 데이터 체크 (2초마다)
             setInterval(function() {
+                var prevReservationCount = storeReservations.length;
+                var prevDealCount = storeDeals.length;
+                
                 loadReservationsData();
-                updateDashboard();
-            }, 3000);
+                loadDealsData();
+                
+                // 데이터 변경 감지
+                if (storeReservations.length !== prevReservationCount) {
+                    console.log('🔄 예약 데이터 변경 감지:', storeReservations.length);
+                    loadReservationsTable();
+                    updateDashboard();
+                }
+                
+                if (storeDeals.length !== prevDealCount) {
+                    console.log('🔄 딜 데이터 변경 감지:', storeDeals.length);
+                    loadDealsTable();
+                    updateDashboard();
+                }
+            }, 2000);
         }
 
         function handleRealTimeUpdate(type, data) {
@@ -691,7 +709,10 @@
             
             switch (type) {
                 case 'reservation_added':
-                    showNotification('🎉 새로운 예약이 접수되었습니다: ' + data.customer_name + '님', 'success');
+                    console.log('📅 새 예약 데이터:', data);
+                    if (data.store_name === currentStore.name) {
+                        showNotification('🎉 새로운 예약이 접수되었습니다: ' + data.customer_name + '님', 'success');
+                    }
                     loadReservationsData();
                     updateDashboard();
                     loadReservationsTable();
@@ -711,9 +732,17 @@
         }
 
         function loadReservationsData() {
-            storeReservations = getAllReservations().filter(function(reservation) {
-                return reservation.store_name === currentStore.name;
+            console.log('📊 예약 데이터 로드 중...');
+            var allReservations = getAllReservations();
+            console.log('📦 전체 예약:', allReservations.length + '개');
+            
+            storeReservations = allReservations.filter(function(reservation) {
+                var isOurStore = reservation.store_name === currentStore.name;
+                console.log('🏪 예약 매장 체크:', reservation.store_name, '=', currentStore.name, '?', isOurStore);
+                return isOurStore;
             });
+            
+            console.log('✅ 우리 매장 예약:', storeReservations.length + '개');
         }
 
         // 섹션 전환
