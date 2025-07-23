@@ -280,9 +280,8 @@
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
         }
-    </style>
-</head>
-.deal-card {
+
+        .deal-card {
             background: #ffffff;
             border: 1px solid #e5e5e5;
             border-radius: 12px;
@@ -849,7 +848,8 @@
     </div>
 
     <div id="notification" class="notification"></div>
-<!-- JavaScript 시작 -->
+
+    <!-- JavaScript -->
     <script>
         // 전역 변수
         var currentUser = null;
@@ -858,11 +858,7 @@
         var selectedDeal = null;
         var supabaseClient = null;
 
-        // Supabase 설정
-        var SUPABASE_URL = 'YOUR_SUPABASE_URL_HERE';
-        var SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
-
-        // 샘플 딜 데이터 (18개)
+        // 샘플 딜 데이터
         var sampleDeals = [
             {
                 id: 'sample-1',
@@ -1064,48 +1060,6 @@
             }
         ];
 
-        // Supabase 초기화
-        function initSupabase() {
-            try {
-                if (SUPABASE_URL.includes('YOUR_') || SUPABASE_ANON_KEY.includes('YOUR_')) {
-                    console.log('⚠️ Supabase 키가 설정되지 않았습니다. 데모 모드로 실행합니다.');
-                    return false;
-                }
-                
-                if (window.supabase && typeof window.supabase.createClient === 'function') {
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('✅ Supabase 연결 성공!');
-                    
-                    supabaseClient.auth.onAuthStateChange(function(event, session) {
-                        console.log('Auth state changed:', event);
-                        
-                        if (event === 'SIGNED_IN' && session && session.user) {
-                            currentUser = {
-                                id: session.user.id,
-                                email: session.user.email,
-                                name: session.user.user_metadata?.name || session.user.email.split('@')[0],
-                                phone: session.user.user_metadata?.phone || '010-0000-0000'
-                            };
-                            updateUIForUser(currentUser);
-                            renderDeals(currentDeals);
-                        } else if (event === 'SIGNED_OUT') {
-                            currentUser = null;
-                            updateUIForGuest();
-                            renderDeals(currentDeals);
-                        }
-                    });
-                    
-                    return true;
-                } else {
-                    console.log('⚠️ Supabase 라이브러리 로드 실패. 데모 모드로 실행합니다.');
-                    return false;
-                }
-            } catch (error) {
-                console.log('⚠️ Supabase 초기화 오류:', error, '. 데모 모드로 실행합니다.');
-                return false;
-            }
-        }
-
         // 딜 정렬 함수
         function sortDeals(deals, sortBy) {
             var sortedDeals = deals.slice();
@@ -1116,13 +1070,11 @@
                         return a.discounted_price - b.discounted_price;
                     });
                     break;
-                    
                 case 'price-high':
                     sortedDeals.sort(function(a, b) {
                         return b.discounted_price - a.discounted_price;
                     });
                     break;
-                    
                 case 'discount-high':
                     sortedDeals.sort(function(a, b) {
                         var discountA = (1 - a.discounted_price / a.original_price) * 100;
@@ -1130,81 +1082,6 @@
                         return discountB - discountA;
                     });
                     break;
-                    
-                case 'savings-high':
-                    sortedDeals.sort(function(a, b) {
-                        var savingsA = a.original_price - a.discounted_price;
-                        var savingsB = b.original_price - b.discounted_price;
-                        return savingsB - savingsA;
-                    });
-                    break;
-                    
-                case 'brand':
-                    sortedDeals.sort(function(a, b) {
-                        var brandA = a.phone_model.includes('갤럭시') ? '1-갤럭시' : 
-                                   a.phone_model.includes('아이폰') ? '2-아이폰' :
-                                   a.phone_model.includes('샤오미') ? '3-샤오미' :
-                                   a.phone_model.includes('픽셀') ? '4-픽셀' : '5-기타';
-                        var brandB = b.phone_model.includes('갤럭시') ? '1-갤럭시' : 
-                                   b.phone_model.includes('아이폰') ? '2-아이폰' :
-                                   b.phone_model.includes('샤오미') ? '3-샤오미' :
-                                   b.phone_model.includes('픽셀') ? '4-픽셀' : '5-기타';
-                        
-                        if (brandA === brandB) {
-                            return a.discounted_price - b.discounted_price;
-                        }
-                        return brandA.localeCompare(brandB);
-                    });
-                    break;
-                    
-                case 'newest':
-                    sortedDeals.sort(function(a, b) {
-                        var scoreA = 0;
-                        var scoreB = 0;
-                        
-                        if (a.phone_model.includes('S24')) scoreA += 100;
-                        if (a.phone_model.includes('15') && a.phone_model.includes('아이폰')) scoreA += 90;
-                        if (a.phone_model.includes('14') && a.phone_model.includes('아이폰')) scoreA += 80;
-                        if (a.phone_model.includes('픽셀 8')) scoreA += 85;
-                        if (a.phone_model.includes('샤오미 14')) scoreA += 85;
-                        
-                        if (b.phone_model.includes('S24')) scoreB += 100;
-                        if (b.phone_model.includes('15') && b.phone_model.includes('아이폰')) scoreB += 90;
-                        if (b.phone_model.includes('14') && b.phone_model.includes('아이폰')) scoreB += 80;
-                        if (b.phone_model.includes('픽셀 8')) scoreB += 85;
-                        if (b.phone_model.includes('샤오미 14')) scoreB += 85;
-                        
-                        if (scoreA === scoreB) {
-                            return a.discounted_price - b.discounted_price;
-                        }
-                        return scoreB - scoreA;
-                    });
-                    break;
-                    
-                case 'popular':
-                    sortedDeals.sort(function(a, b) {
-                        var scoreA = 0;
-                        var scoreB = 0;
-                        
-                        if (a.phone_model.includes('Pro')) scoreA += 50;
-                        if (a.phone_model.includes('S24') || a.phone_model.includes('S23')) scoreA += 40;
-                        if (a.phone_model.includes('아이폰 15')) scoreA += 45;
-                        if (a.phone_model.includes('Z플립') || a.phone_model.includes('Z폴드')) scoreA += 35;
-                        
-                        if (b.phone_model.includes('Pro')) scoreB += 50;
-                        if (b.phone_model.includes('S24') || b.phone_model.includes('S23')) scoreB += 40;
-                        if (b.phone_model.includes('아이폰 15')) scoreB += 45;
-                        if (b.phone_model.includes('Z플립') || b.phone_model.includes('Z폴드')) scoreB += 35;
-                        
-                        var discountA = (1 - a.discounted_price / a.original_price) * 100;
-                        var discountB = (1 - b.discounted_price / b.original_price) * 100;
-                        scoreA += discountA * 0.3;
-                        scoreB += discountB * 0.3;
-                        
-                        return scoreB - scoreA;
-                    });
-                    break;
-                    
                 default:
                     sortedDeals.sort(function(a, b) {
                         return a.discounted_price - b.discounted_price;
@@ -1222,7 +1099,7 @@
             }
         }
 
-        // 딜 목록 로드 (필터 + 정렬 기능)
+        // 딜 목록 로드
         function loadDeals() {
             var dealsGrid = document.getElementById('dealsGrid');
             if (dealsGrid) {
@@ -1238,84 +1115,33 @@
                 
                 var deals = sampleDeals.slice();
                 
-                // 지역 필터
+                // 필터 적용
                 if (location) {
                     deals = deals.filter(function(deal) {
                         return deal.address.includes(location);
                     });
                 }
-                
-                // 통신사 필터
                 if (carrier) {
                     deals = deals.filter(function(deal) {
                         return deal.carrier === carrier;
                     });
                 }
-                
-                // 가격대 필터
                 if (priceRange) {
                     var priceRangeArray = priceRange.split('-');
                     var minPrice = parseInt(priceRangeArray[0]);
                     var maxPrice = parseInt(priceRangeArray[1]);
-                    
                     deals = deals.filter(function(deal) {
                         return deal.discounted_price >= minPrice && deal.discounted_price <= maxPrice;
                     });
                 }
-                
-                // 브랜드 필터
                 if (brand) {
                     deals = deals.filter(function(deal) {
                         return deal.phone_model.includes(brand);
                     });
                 }
                 
-                // 사용자 타입별 가중치 적용 (정렬 전에)
-                if (currentUserType === 'senior') {
-                    deals.forEach(function(deal) {
-                        if (deal.phone_model.includes('시니어') || 
-                            deal.features.includes('큰 글씨') || 
-                            deal.features.includes('간편 모드')) {
-                            deal._userTypeScore = 100;
-                        } else {
-                            deal._userTypeScore = 0;
-                        }
-                    });
-                } else if (currentUserType === 'minor') {
-                    deals.forEach(function(deal) {
-                        if (deal.features.includes('학생할인') || 
-                            deal.features.includes('부모관리') || 
-                            deal.features.includes('안전기능')) {
-                            deal._userTypeScore = 100;
-                        } else {
-                            deal._userTypeScore = 0;
-                        }
-                    });
-                } else {
-                    deals.forEach(function(deal) {
-                        deal._userTypeScore = 0;
-                    });
-                }
-                
                 // 정렬 적용
                 deals = sortDeals(deals, sortBy);
-                
-                // 사용자 타입 가중치가 있는 경우 최종 정렬
-                if (currentUserType !== 'adult') {
-                    deals.sort(function(a, b) {
-                        if (a._userTypeScore !== b._userTypeScore) {
-                            return b._userTypeScore - a._userTypeScore;
-                        }
-                        return 0;
-                    });
-                }
-                
-                // 가중치 속성 제거
-                deals.forEach(function(deal) {
-                    delete deal._userTypeScore;
-                });
-                
-                console.log('필터링 + 정렬 결과:', deals.length + '개 딜, 정렬:', sortBy);
                 
                 currentDeals = deals;
                 updateResultsCount(deals.length);
@@ -1329,7 +1155,7 @@
             }
         }
 
-        // 딜 렌더링 (디자인 개선)
+        // 딜 렌더링
         function renderDeals(deals) {
             var dealsGrid = document.getElementById('dealsGrid');
             if (!dealsGrid) return;
@@ -1474,16 +1300,6 @@
                 modalTitle.textContent = selectedDeal.phone_model + ' 예약 신청';
             }
             
-            var customerName = document.getElementById('customerName');
-            var customerPhone = document.getElementById('customerPhone');
-            
-            if (customerName && currentUser.name) {
-                customerName.value = currentUser.name;
-            }
-            if (customerPhone && currentUser.phone) {
-                customerPhone.value = currentUser.phone;
-            }
-            
             var modal = document.getElementById('reservationModal');
             if (modal) modal.style.display = 'block';
         }
@@ -1495,9 +1311,6 @@
 
         // 로그아웃
         function logout() {
-            if (supabaseClient) {
-                supabaseClient.auth.signOut();
-            }
             updateUIForGuest();
             showNotification('로그아웃되었습니다.', 'success');
             renderDeals(currentDeals);
@@ -1515,7 +1328,6 @@
             }
             
             currentUserType = type;
-            console.log('사용자 타입 변경됨:', currentUserType);
             loadDeals();
         }
 
@@ -1523,28 +1335,11 @@
         function setupEventListeners() {
             try {
                 // 사용자 타입 버튼
-                var adultBtn = document.querySelector('[data-type="adult"]');
-                var seniorBtn = document.querySelector('[data-type="senior"]');
-                var minorBtn = document.querySelector('[data-type="minor"]');
-                
-                if (adultBtn) {
-                    adultBtn.addEventListener('click', function() {
-                        console.log('일반 성인 버튼 클릭됨');
-                        setActiveUserType('adult', this);
-                    });
-                }
-                
-                if (seniorBtn) {
-                    seniorBtn.addEventListener('click', function() {
-                        console.log('시니어 버튼 클릭됨');
-                        setActiveUserType('senior', this);
-                    });
-                }
-                
-                if (minorBtn) {
-                    minorBtn.addEventListener('click', function() {
-                        console.log('미성년자 버튼 클릭됨');
-                        setActiveUserType('minor', this);
+                var userTypeBtns = document.querySelectorAll('.user-type-btn');
+                for (var i = 0; i < userTypeBtns.length; i++) {
+                    userTypeBtns[i].addEventListener('click', function() {
+                        var type = this.getAttribute('data-type');
+                        setActiveUserType(type, this);
                     });
                 }
 
@@ -1561,7 +1356,6 @@
                 var sortSelect = document.getElementById('sortBy');
                 if (sortSelect) {
                     sortSelect.addEventListener('change', function() {
-                        console.log('정렬 변경:', this.value);
                         loadDeals();
                     });
                 }
@@ -1646,14 +1440,6 @@
             console.log('폰싸게 앱 시작!');
             
             try {
-                var supabaseReady = initSupabase();
-                
-                if (supabaseReady) {
-                    console.log('✅ Supabase 모드로 실행');
-                } else {
-                    console.log('⚠️ 데모 모드로 실행');
-                }
-                
                 setupEventListeners();
                 loadDeals();
                 console.log('폰싸게 앱 초기화 완료!');
@@ -1671,13 +1457,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             initApp();
         });
-
-        // 디버그 함수
-        window.debugApp = function() {
-            console.log('현재 사용자:', currentUser);
-            console.log('현재 딜:', currentDeals.length + '개');
-            console.log('현재 사용자 타입:', currentUserType);
-        };
     </script>
 </body>
 </html>
