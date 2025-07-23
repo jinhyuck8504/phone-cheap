@@ -1127,11 +1127,15 @@
         }
 
         function setupRealTimeSync() {
+            console.log('🔄 실시간 동기화 시작');
+            
             // 다른 탭/창의 변경사항 감지
             window.addEventListener('storage', function(e) {
                 if (e.key && e.key.startsWith('phonecheap_sync_')) {
+                    console.log('📨 Storage 이벤트 수신:', e.key);
                     try {
                         var updateData = JSON.parse(e.newValue);
+                        console.log('📦 수신된 데이터:', updateData);
                         handleRealTimeUpdate(updateData.type, updateData.data);
                     } catch (error) {
                         console.error('실시간 동기화 오류:', error);
@@ -1141,6 +1145,7 @@
 
             // 같은 탭 내 업데이트 감지
             window.addEventListener('phonecheap_update', function(e) {
+                console.log('📨 Custom 이벤트 수신:', e.detail);
                 handleRealTimeUpdate(e.detail.type, e.detail.data);
             });
 
@@ -1148,24 +1153,30 @@
             setInterval(function() {
                 checkForUpdates();
             }, 5000);
+            
+            console.log('✅ 실시간 동기화 설정 완료');
         }
 
         function handleRealTimeUpdate(type, data) {
-            console.log('실시간 업데이트 받음:', type, data);
+            console.log('🎯 실시간 업데이트 처리:', type, data);
             
             switch (type) {
                 case 'deal_added':
-                    showNotification('새로운 딜이 등록되었습니다: ' + data.phone_model, 'success');
+                    console.log('🆕 새 딜 알림:', data.phone_model);
+                    showNotification('🎉 새로운 딜이 등록되었습니다: ' + data.phone_model, 'success');
                     loadDeals(); // 딜 목록 새로고침
                     break;
                 case 'deal_updated':
-                    showNotification('딜 정보가 업데이트되었습니다: ' + data.phone_model, 'success');
+                    console.log('📝 딜 업데이트:', data.phone_model);
+                    showNotification('📝 딜 정보가 업데이트되었습니다: ' + data.phone_model, 'success');
                     loadDeals();
                     break;
                 case 'reservation_added':
-                    // 메인 페이지에서는 예약 알림만 표시
-                    console.log('새 예약:', data);
+                    console.log('📅 새 예약:', data);
+                    // 메인 페이지에서는 예약 알림은 표시하지 않음 (대리점용)
                     break;
+                default:
+                    console.log('❓ 알 수 없는 업데이트 타입:', type);
             }
         }
 
